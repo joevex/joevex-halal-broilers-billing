@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, orderBy, query, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBTn3IkFFX7JEVOTbMfomoYzL_ymBy2dH8",
@@ -27,7 +27,6 @@ const PRODUCTS = [
 ];
 
 fetchHotelsFromFirestore();
-fetchSalesHistoryFromFirestore();
 
 window.openAddHotelModal = function() {
     document.getElementById('hotelModalTitle').innerText = '➕ Add Hotel';
@@ -36,7 +35,7 @@ window.openAddHotelModal = function() {
     document.getElementById('customerName').value = '';
     document.getElementById('contactNumber').value = '';
     document.getElementById('address').value = '';
-    document.getElementById('oldBalance').value = '0';
+    document.getElementById('oldBalance').value = '';
     document.getElementById('hotelModal').style.display = 'flex';
 };
 
@@ -120,7 +119,7 @@ window.editHotel = function(hotel) {
     document.getElementById('customerName').value = hotel.customerName;
     document.getElementById('contactNumber').value = hotel.contactNumber || '';
     document.getElementById('address').value = hotel.address;
-    document.getElementById('oldBalance').value = hotel.oldBalance || 0;
+    document.getElementById('oldBalance').value = hotel.oldBalance || '';
     document.getElementById('hotelModal').style.display = 'flex';
 };
 
@@ -141,7 +140,7 @@ window.openBillingModal = function(hotel) {
 
     let todayStr = new Date().toISOString().split('T')[0];
     document.getElementById('billDate').value = todayStr;
-    document.getElementById('customerPaid').value = '0';
+    document.getElementById('customerPaid').value = '';
 
     buildCartTable();
     window.calculateFinalSummary();
@@ -160,9 +159,9 @@ function buildCartTable() {
         let tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="text-align:left; font-weight:600;">${index + 1}. ${p.name}</td>
-            <td><input type="number" id="paper_${p.id}" value="0" step="0.1" oninput="window.calculateRow(${p.id}, '${p.type}')"></td>
-            <td><input type="number" id="est_${p.id}" value="0" step="0.1" oninput="window.calculateRow(${p.id}, '${p.type}')"></td>
-            <td><input type="number" id="wt_${p.id}" value="0" step="0.01" oninput="window.calculateRow(${p.id}, '${p.type}')"></td>
+            <td><input type="number" id="paper_${p.id}" value="" step="0.1" oninput="window.calculateRow(${p.id}, '${p.type}')"></td>
+            <td><input type="number" id="est_${p.id}" value="" step="0.1" oninput="window.calculateRow(${p.id}, '${p.type}')"></td>
+            <td><input type="number" id="wt_${p.id}" value="" step="0.01" oninput="window.calculateRow(${p.id}, '${p.type}')"></td>
             <td id="amt_${p.id}" style="font-weight:bold; color:#059669;">0.00</td>
         `;
         tbody.appendChild(tr);
@@ -260,9 +259,8 @@ window.generateAndShareBill = async function() {
         canvas.toBlob(blob => {
             let file = new File([blob], `Bill_${activeHotel.hotelName}_${billDate}.png`, { type: 'image/png' });
             
-            // Direct WhatsApp Sharing Link setup
             let cleanPhone = activeHotel.contactNumber ? activeHotel.contactNumber.replace(/\D/g, '') : '';
-            if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; // Add India country code if missing
+            if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
 
             let message = encodeURIComponent(`*HALAL BROILERS* 🍗\nDate: ${billDate}\nHotel: ${activeHotel.hotelName}\nBill Amount: ₹${itemsTotal.toFixed(2)}\nGrand Total Balance: ₹${finalBal.toFixed(2)}\nThank you! Visit again.`);
 
@@ -279,7 +277,6 @@ window.generateAndShareBill = async function() {
                 link.click();
             }
 
-            // Open WhatsApp with direct chat if phone available
             if (cleanPhone) {
                 window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
             }
@@ -288,31 +285,3 @@ window.generateAndShareBill = async function() {
         });
     });
 };
-
-function fetchSalesHistoryFromFirestore() {
-    let list = document.getElementById('salesHistoryList');
-    if (!list) return;
-
-    const q = query(collection(db, "sales"), orderBy("timestamp", "desc"), limit(10));
-    onSnapshot(q, (snapshot) => {
-        list.innerHTML = '';
-        if (snapshot.empty) {
-            list.innerHTML = '<link style="text-align:center; color:#64748b; font-size:12px; padding:8px;">No sales records found.</link>';
-            return;
-        }
-
-        snapshot.forEach(docSnap => {
-            let s = docSnap.data();
-            let li = document.createElement('li');
-            li.className = 'history-card';
-            li.innerHTML = `
-                <div>
-                    <strong>${s.hotelName}</strong> (${s.date})
-                    <div style="font-size:11px; color:#64748b;">Bill: ₹${(s.itemsTotal || 0).toFixed(2)} | Paid: ₹${(s.paid || 0).toFixed(2)}</div>
-                </div>
-                <div style="font-weight:bold; color:#dc2626;">Balance: ₹${(s.finalBalance || 0).toFixed(2)}</div>
-            `;
-            list.appendChild(li);
-        });
-    });
-}

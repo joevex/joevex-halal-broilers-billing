@@ -31,14 +31,6 @@
                 <!-- JS மூலம் ஹோட்டல்கள் வரும் -->
             </ul>
         </section>
-
-        <!-- Overall Sales History -->
-        <section class="card">
-            <h3>📜 Sales History</h3>
-            <div id="salesHistoryList" class="sales-history-list">
-                <!-- விற்பனை வரலாறு வரும் -->
-            </div>
-        </section>
     </div>
 
     <!-- Add/Edit Hotel Modal -->
@@ -57,16 +49,16 @@
                 <input type="text" id="customerName" placeholder="e.g. Joe">
             </div>
             <div class="form-group">
-            <label>Contact Number (WhatsApp):</label>
-            <input type="text" id="contactNumber" placeholder="e.g. 9876543210">
-        </div>
+                <label>Contact Number (WhatsApp):</label>
+                <input type="text" id="contactNumber" placeholder="e.g. 9876543210">
+            </div>
             <div class="form-group">
                 <label>Address:</label>
                 <textarea id="address" rows="2" placeholder="e.g. Malumichampatti"></textarea>
             </div>
             <div class="form-group">
                 <label>Old Balance (₹):</label>
-                <input type="number" id="oldBalance" value="0" placeholder="0.00">
+                <input type="number" id="oldBalance" placeholder="0.00">
             </div>
             <button class="btn btn-primary" onclick="window.saveHotel()">Save Hotel</button>
         </div>
@@ -116,7 +108,7 @@
             <div class="payment-section">
                 <div class="form-group">
                     <label>Customer Paid (₹):</label>
-                    <input type="number" id="customerPaid" value="0" placeholder="0.00" oninput="window.calculateFinalSummary()">
+                    <input type="number" id="customerPaid" placeholder="Enter Paid Amount" oninput="window.calculateFinalSummary()">
                 </div>
                 
                 <div class="summary-box">
@@ -129,7 +121,8 @@
             </div>
 
             <div class="modal-buttons">
-                <button class="btn btn-success" onclick="window.generateAndShareBill()">📥 Share Premium Bill Image</button>
+                <button class="btn btn-success" onclick="window.generateAndShareBill()">📥 Share WhatsApp & Bill</button>
+                <button class="btn" onclick="window.closeBillingModal()" style="background: #64748b; color: white;">❌ Exit / Cancel</button>
             </div>
         </div>
     </div>

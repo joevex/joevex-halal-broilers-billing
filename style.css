@@ -54,7 +54,7 @@ body {
     background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 450px; position: relative;
 }
 .large-modal { max-width: 600px; }
-.close-btn { position: absolute; right: 15px; top: 12px; font-size: 22px; cursor: pointer; }
+.close-btn { position: absolute; right: 15px; top: 12px; font-size: 24px; cursor: pointer; color: #dc2626; font-weight: bold; }
 
 .form-group { margin-bottom: 12px; }
 .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #475569; }
@@ -81,13 +81,6 @@ input, textarea, select {
 .modal-buttons { display: flex; gap: 10px; }
 .btn { padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; }
 .btn-success { background: #059669; color: white; }
-
-.sales-history-list { list-style: none; }
-.history-card {
-    background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 6px;
-    display: flex; justify-content: space-between; align-items: center; font-size: 12px;
-    border-left: 3px solid #10b981;
-}
 
 /* RECEIPT TEMPLATE DESIGN */
 .receipt-template {
