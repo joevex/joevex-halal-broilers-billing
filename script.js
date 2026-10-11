@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, orderBy, query, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-// Your Firebase credentials
 const firebaseConfig = {
     apiKey: "AIzaSyBTn3IkFFX7JEVOTbMfomoYzL_ymBy2dH8",
     authDomain: "halal-broilers-billing.firebaseapp.com",
@@ -12,11 +11,9 @@ const firebaseConfig = {
     measurementId: "G-871L1DVP7C"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 9 Products definition (1-5: Formula 1, 6-9: Formula 2)
 const PRODUCTS = [
     { id: 1, name: "Broiler Chicken", type: "formula1" },
     { id: 2, name: "Biriyani Piece", type: "formula1" },
@@ -29,7 +26,6 @@ const PRODUCTS = [
     { id: 9, name: "Waste", type: "formula2" }
 ];
 
-// Start Real-time Data Sync
 fetchHotelsFromFirestore();
 fetchSalesHistoryFromFirestore();
 
@@ -38,6 +34,7 @@ window.openAddHotelModal = function() {
     document.getElementById('editHotelId').value = '';
     document.getElementById('hotelName').value = '';
     document.getElementById('customerName').value = '';
+    document.getElementById('contactNumber').value = '';
     document.getElementById('address').value = '';
     document.getElementById('oldBalance').value = '0';
     document.getElementById('hotelModal').style.display = 'flex';
@@ -51,17 +48,19 @@ window.saveHotel = async function() {
     let docId = document.getElementById('editHotelId').value;
     let name = document.getElementById('hotelName').value.trim();
     let customer = document.getElementById('customerName').value.trim();
+    let contact = document.getElementById('contactNumber').value.trim();
     let address = document.getElementById('address').value.trim();
     let oldBal = parseFloat(document.getElementById('oldBalance').value) || 0;
 
-    if (!name || !customer || !address) {
-        alert('Please fill all details!');
+    if (!name || !customer || !contact || !address) {
+        alert('Please fill all details including contact number!');
         return;
     }
 
     let hotelData = {
         hotelName: name,
         customerName: customer,
+        contactNumber: contact,
         address: address,
         oldBalance: oldBal,
         updatedAt: serverTimestamp()
@@ -99,7 +98,8 @@ function fetchHotelsFromFirestore() {
             li.innerHTML = `
                 <div class="hotel-info">
                     <h4>🏨 ${hotel.hotelName}</h4>
-                    <p>👤 Customer: ${hotel.customerName} | 📍 ${hotel.address}</p>
+                    <p>👤 ${hotel.customerName} | 📞 ${hotel.contactNumber || 'N/A'}</p>
+                    <p style="font-size:11px; color:#64748b;">📍 ${hotel.address}</p>
                     <p>Old Balance: <span class="balance-tag">₹${(hotel.oldBalance || 0).toFixed(2)}</span></p>
                 </div>
                 <div class="actions">
@@ -118,6 +118,7 @@ window.editHotel = function(hotel) {
     document.getElementById('editHotelId').value = hotel.docId;
     document.getElementById('hotelName').value = hotel.hotelName;
     document.getElementById('customerName').value = hotel.customerName;
+    document.getElementById('contactNumber').value = hotel.contactNumber || '';
     document.getElementById('address').value = hotel.address;
     document.getElementById('oldBalance').value = hotel.oldBalance || 0;
     document.getElementById('hotelModal').style.display = 'flex';
@@ -210,7 +211,7 @@ window.generateAndShareBill = async function() {
 
     document.getElementById('rDateStr').innerText = billDate;
     document.getElementById('rHotelName').innerText = activeHotel.hotelName;
-    document.getElementById('rCustomerName').innerText = activeHotel.customerName;
+    document.getElementById('rCustomerName').innerText = `${activeHotel.customerName} (${activeHotel.contactNumber || ''})`;
     document.getElementById('rAddress').innerText = activeHotel.address;
 
     document.getElementById('rItemsTotal').innerText = itemsTotal.toFixed(2);
@@ -237,7 +238,6 @@ window.generateAndShareBill = async function() {
         }
     });
 
-    // Save Sale Record to Firestore
     await addDoc(collection(db, "sales"), {
         date: billDate,
         hotelName: activeHotel.hotelName,
@@ -247,7 +247,6 @@ window.generateAndShareBill = async function() {
         timestamp: serverTimestamp()
     });
 
-    // Update Hotel Old Balance in Firestore
     await updateDoc(doc(db, "hotels", activeHotel.docId), {
         oldBalance: finalBal
     });
@@ -261,6 +260,12 @@ window.generateAndShareBill = async function() {
         canvas.toBlob(blob => {
             let file = new File([blob], `Bill_${activeHotel.hotelName}_${billDate}.png`, { type: 'image/png' });
             
+            // Direct WhatsApp Sharing Link setup
+            let cleanPhone = activeHotel.contactNumber ? activeHotel.contactNumber.replace(/\D/g, '') : '';
+            if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; // Add India country code if missing
+
+            let message = encodeURIComponent(`*HALAL BROILERS* 🍗\nDate: ${billDate}\nHotel: ${activeHotel.hotelName}\nBill Amount: ₹${itemsTotal.toFixed(2)}\nGrand Total Balance: ₹${finalBal.toFixed(2)}\nThank you! Visit again.`);
+
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 navigator.share({
                     files: [file],
@@ -272,8 +277,13 @@ window.generateAndShareBill = async function() {
                 link.download = `Bill_${activeHotel.hotelName}_${billDate}.png`;
                 link.href = URL.createObjectURL(blob);
                 link.click();
-                alert('Premium Bill Image downloaded successfully!');
             }
+
+            // Open WhatsApp with direct chat if phone available
+            if (cleanPhone) {
+                window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+            }
+
             window.closeBillingModal();
         });
     });
@@ -287,7 +297,7 @@ function fetchSalesHistoryFromFirestore() {
     onSnapshot(q, (snapshot) => {
         list.innerHTML = '';
         if (snapshot.empty) {
-            list.innerHTML = '<li style="text-align:center; color:#64748b; font-size:12px; padding:8px;">No sales records found.</li>';
+            list.innerHTML = '<link style="text-align:center; color:#64748b; font-size:12px; padding:8px;">No sales records found.</link>';
             return;
         }
 
