@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halal Broilers - Smart Billing</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- html2canvas for Receipt Image Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" async></script>
+</head>
+<body>
+
+    <!-- Main Dashboard -->
+    <div id="mainContent" class="container">
+        <header class="app-header">
+            <img src="logo.png" alt="Logo" class="header-logo-img" onerror="this.style.display='none'">
+            <div>
+                <h1>HALAL BROILERS</h1>
+                <p>Wholesale & Retail - Billing System</p>
+            </div>
+        </header>
+
+        <!-- Hotel Management Section -->
+        <section class="card">
+            <div class="card-header">
+                <h3>🏨 Hotel & Customer List</h3>
+                <button class="btn-sm btn-primary" onclick="window.openAddHotelModal()">+ Add New Hotel</button>
+            </div>
+            <ul id="hotelList" class="hotel-list">
+                <!-- JS மூலம் ஹோட்டல்கள் வரும் -->
+            </ul>
+        </section>
+
+        <!-- Overall Sales History -->
+        <section class="card">
+            <h3>📜 Sales History</h3>
+            <div id="salesHistoryList" class="sales-history-list">
+                <!-- விற்பனை வரலாறு வரும் -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Add/Edit Hotel Modal -->
+    <div id="hotelModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="window.closeHotelModal()">&times;</span>
+            <h3 id="hotelModalTitle">➕ Add Hotel</h3>
+            <input type="hidden" id="editHotelId">
+            
+            <div class="form-group">
+                <label>Hotel Name:</label>
+                <input type="text" id="hotelName" placeholder="e.g. Hotel Rahman">
+            </div>
+            <div class="form-group">
+                <label>Customer Name:</label>
+                <input type="text" id="customerName" placeholder="e.g. Joe">
+            </div>
+            <div class="form-group">
+                <label>Address:</label>
+                <textarea id="address" rows="2" placeholder="e.g. Malumichampatti"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Old Balance (₹):</label>
+                <input type="number" id="oldBalance" value="0" placeholder="0.00">
+            </div>
+            <button class="btn btn-primary" onclick="window.saveHotel()">Save Hotel</button>
+        </div>
+    </div>
+
+    <!-- Billing & Cart Modal -->
+    <div id="billingModal" class="modal">
+        <div class="modal-content large-modal">
+            <span class="close-btn" onclick="window.closeBillingModal()">&times;</span>
+            
+            <div class="bill-top-bar">
+                <h2>📝 Create New Bill</h2>
+                <div class="form-group inline-date">
+                    <label>Date:</label>
+                    <input type="date" id="billDate">
+                </div>
+            </div>
+
+            <div class="bill-hotel-info">
+                <p><b>Hotel:</b> <span id="bHotelName"></span> | <b>Customer:</b> <span id="bCustomerName"></span></p>
+                <p><b>Address:</b> <span id="bAddress"></span></p>
+                <p><b>Old Balance:</b> ₹<span id="bOldBalance">0.00</span></p>
+            </div>
+
+            <!-- Cart Products Table -->
+            <div class="cart-section">
+                <h4>🛒 Cart Items</h4>
+                <div class="table-responsive">
+                    <table class="cart-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Paper Rate</th>
+                                <th>Est. Cost</th>
+                                <th>Weight / Qty</th>
+                                <th>Total (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartTableBody">
+                            <!-- JS மூலம் பொருட்கள் வரும் -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Payment Details Section -->
+            <div class="payment-section">
+                <div class="form-group">
+                    <label>Customer Paid (₹):</label>
+                    <input type="number" id="customerPaid" value="0" placeholder="0.00" oninput="window.calculateFinalSummary()">
+                </div>
+                
+                <div class="summary-box">
+                    <p>Items Total: ₹<span id="itemsTotalAmt">0.00</span></p>
+                    <p>Old Balance (+): ₹<span id="summaryOldBal">0.00</span></p>
+                    <p>Paid (-): ₹<span id="summaryPaid">0.00</span></p>
+                    <hr>
+                    <h3>Grand Total Balance: ₹<span id="finalBalanceAmt">0.00</span></h3>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-success" onclick="window.generateAndShareBill()">📥 Share Premium Bill Image</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Receipt Template for Image Generation -->
+    <div id="receiptTemplate" class="receipt-template">
+        <div class="r-top-arabic">مَاشَاءَاللَّه</div>
+        
+        <div class="receipt-header">
+            <div class="r-logo-box">
+                <img src="logo.png" alt="Logo" class="r-logo" onerror="this.style.display='none'">
+            </div>
+            <div class="r-brand-box">
+                <h1 class="r-title">HALAL BROILERS</h1>
+                <p class="r-subtitle-tag">WHOLESALE & RETAIL</p>
+                <p class="r-subtitle-branch">பண்ணை விலையில் கிடைக்கும்</p>
+                <p class="r-branch-locations">Chettipalayam & Arisipalayam</p>
+            </div>
+            <div class="r-top-contact">
+                📞 88704 38109<br>📞 98949 15756
+            </div>
+        </div>
+
+        <div class="r-meta-box">
+            <div class="r-meta-item">📅 <b>Date:</b> <span id="rDateStr"></span></div>
+        </div>
+
+        <div class="r-customer-card">
+            <p>👤 <b>Customer Name:</b> <span id="rCustomerName"></span> (<span id="rHotelName"></span>)</p>
+            <p>📍 <b>Address:</b> <span id="rAddress"></span></p>
+        </div>
+
+        <table class="r-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">#</th>
+                    <th style="width: 50%;">Item</th>
+                    <th style="width: 20%;">Weight</th>
+                    <th style="width: 20%;">Total (₹)</th>
+                </tr>
+            </thead>
+            <tbody id="rTableBody">
+                <!-- JS மூலம் பில் விவரங்கள் வரும் -->
+            </tbody>
+        </table>
+
+        <div class="r-summary-box">
+            <div class="r-sum-row">
+                <span>🛒 Items Total</span>
+                <span>₹ <span id="rItemsTotal">0.00</span></span>
+            </div>
+            <div class="r-sum-row">
+                <span>📜 Old Balance</span>
+                <span>₹ <span id="rOldBal">0.00</span></span>
+            </div>
+            <div class="r-sum-row" style="color: #059669;">
+                <span>💵 Customer Paid</span>
+                <span>- ₹ <span id="rPaid">0.00</span></span>
+            </div>
+            <div class="r-grand-total">
+                <span>Grand Total Balance</span>
+                <span>₹ <span id="rFinalBal">0.00</span></span>
+            </div>
+        </div>
+
+        <div class="r-footer-banner">
+            <h3>THANK YOU • VISIT US AGAIN</h3>
+        </div>
+    </div>
+
+    <!-- Main JS as Module -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
