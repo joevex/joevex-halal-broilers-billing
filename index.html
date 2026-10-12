@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Halal Broilers - Billing & ERP</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.9">
     
-    <!-- html2canvas for Receipt Image Generation -->
+    <!-- html2canvas for Receipt & Summary Image Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" async></script>
 </head>
 <body>
@@ -33,15 +33,57 @@
             </ul>
         </section>
 
-        <!-- 2. STAFF MANAGEMENT SECTION (Without Attendance) -->
+        <!-- 2. DATE-WISE HOTEL SUMMARY REPORT & WHATSAPP SHARE -->
+        <section class="card">
+            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
+                <h3>📋 Daily Hotel Summary Report</h3>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button class="btn-sm btn-success" onclick="window.exportSummaryImage()">📸 Download</button>
+                    <button class="btn-sm" onclick="window.sendReportToWhatsApp()" style="background: #25d366; color: white; font-weight: bold;">📤 Send WhatsApp</button>
+                </div>
+            </div>
+
+            <!-- Date Filter Input -->
+            <div style="margin-bottom: 12px; background: #1f2937; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                <label style="font-size: 13px; font-weight: bold; color: #f59e0b;">📅 Select Date:</label>
+                <input type="date" id="reportFilterDate" onchange="window.generateOverallSummaryReport()" style="max-width: 180px; background: #fff; color: #000; font-weight: bold; border-radius: 6px; padding: 6px;">
+            </div>
+
+            <!-- Exportable Summary Table Container -->
+            <div id="summaryReportContainer" class="summary-report-box">
+                <div class="report-header-banner">
+                    <h2>HALAL BROILERS 🍗</h2>
+                    <p>Daily Sales, Weight & Balance Summary (<span id="selectedReportDateStr"></span>)</p>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Hotel Name</th>
+                                <th>Products & Weight (kg)</th>
+                                <th>Total Bill (₹)</th>
+                                <th>Paid (₹)</th>
+                                <th>Balance (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overallReportBody">
+                            <!-- JS மூலம் டேட் ஃபில்டர் சம்மரி வரும் -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. STAFF MANAGEMENT SECTION -->
         <section class="card staff-card-wrapper">
             <div class="card-header">
                 <h3>👥 Staff Management</h3>
                 <button class="btn-sm btn-success" onclick="window.openAddStaffModal()">+ Add Staff</button>
             </div>
 
-            <!-- Staff Stats (Only Total Staff & Pending Salary) -->
-            <div class="staff-stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="staff-stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon">👥</div>
                     <div>
@@ -58,59 +100,34 @@
                 </div>
             </div>
 
-            <!-- Staff Directory List -->
             <div id="staffListContainer" class="staff-grid">
                 <!-- JS மூலம் ஸ்டாஃப் கார்டுகள் வரும் -->
             </div>
         </section>
     </div>
 
-    <!-- Add/Edit Hotel Modal -->
+    <!-- Modals & Templates -->
     <div id="hotelModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeHotelModal()">&times;</span>
             <h3 id="hotelModalTitle">➕ Add Hotel</h3>
             <input type="hidden" id="editHotelId">
-            
-            <div class="form-group">
-                <label>Hotel Name:</label>
-                <input type="text" id="hotelName" placeholder="e.g. Hotel Rahman">
-            </div>
-            <div class="form-group">
-                <label>Customer Name:</label>
-                <input type="text" id="customerName" placeholder="e.g. Joe">
-            </div>
-            <div class="form-group">
-                <label>Contact Number (WhatsApp):</label>
-                <input type="text" id="contactNumber" placeholder="e.g. 9876543210">
-            </div>
-            <div class="form-group">
-                <label>Address:</label>
-                <textarea id="address" rows="2" placeholder="e.g. Malumichampatti"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Old Balance (₹):</label>
-                <input type="number" id="oldBalance" placeholder="0.00">
-            </div>
+            <div class="form-group"><label>Hotel Name:</label><input type="text" id="hotelName"></div>
+            <div class="form-group"><label>Customer Name:</label><input type="text" id="customerName"></div>
+            <div class="form-group"><label>Contact Number (WhatsApp):</label><input type="text" id="contactNumber"></div>
+            <div class="form-group"><label>Address:</label><textarea id="address" rows="2"></textarea></div>
+            <div class="form-group"><label>Old Balance (₹):</label><input type="number" id="oldBalance"></div>
             <button class="btn btn-primary" onclick="window.saveHotel()">Save Hotel</button>
         </div>
     </div>
 
-    <!-- Add/Edit Staff Modal -->
     <div id="staffModal" class="modal">
         <div class="modal-content dark-modal">
             <span class="close-btn" onclick="window.closeStaffModal()">&times;</span>
             <h3 id="staffModalTitle" style="color: #f3f4f6; margin-bottom: 15px;">➕ Add Staff Profile</h3>
             <input type="hidden" id="editStaffId">
-            
-            <div class="form-group">
-                <label>Staff Name</label>
-                <input type="text" id="staffName" placeholder="Enter staff name">
-            </div>
-            <div class="form-group">
-                <label>Mobile Number</label>
-                <input type="text" id="staffMobile" placeholder="10 digit mobile">
-            </div>
+            <div class="form-group"><label>Staff Name</label><input type="text" id="staffName"></div>
+            <div class="form-group"><label>Mobile Number</label><input type="text" id="staffMobile"></div>
             <div class="form-group">
                 <label>Role</label>
                 <select id="staffRole">
@@ -120,85 +137,50 @@
                     <option value="Butcher">Butcher</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Monthly Salary (₹)</label>
-                <input type="number" id="staffSalary" placeholder="18000">
-            </div>
+            <div class="form-group"><label>Monthly Salary (₹)</label><input type="number" id="staffSalary"></div>
             <div class="form-group">
                 <label>Staff Status</label>
-                <select id="staffStatus">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                </select>
+                <select id="staffStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
             </div>
             <button class="btn btn-success" onclick="window.saveStaff()" style="margin-top: 10px;">💾 Save Staff</button>
         </div>
     </div>
 
-    <!-- Salary Payment Modal -->
     <div id="salaryModal" class="modal">
         <div class="modal-content dark-modal">
             <span class="close-btn" onclick="window.closeSalaryModal()">&times;</span>
             <h3 style="color: #f3f4f6; margin-bottom: 15px;">💵 Record Salary Payment</h3>
             <input type="hidden" id="payStaffId">
-            
             <div class="staff-mini-card" id="payStaffInfo" style="margin-bottom: 12px;"></div>
-
-            <div class="form-group">
-                <label>Payment Amount (₹)</label>
-                <input type="number" id="payAmount" placeholder="Enter amount">
-            </div>
-            <div class="form-group">
-                <label>Note</label>
-                <input type="text" id="payNote" value="Salary Advance / Payment">
-            </div>
+            <div class="form-group"><label>Payment Amount (₹)</label><input type="number" id="payAmount"></div>
+            <div class="form-group"><label>Note</label><input type="text" id="payNote" value="Salary Advance / Payment"></div>
             <button class="btn btn-success" onclick="window.processSalaryPayment()" style="margin-top: 10px;">💰 Save Payment</button>
         </div>
     </div>
 
-    <!-- Billing & Cart Modal -->
     <div id="billingModal" class="modal">
         <div class="modal-content large-modal" style="background:#fff; color:#1e293b;">
             <span class="close-btn" onclick="window.closeBillingModal()" style="color: #dc2626; font-size: 28px;">&times;</span>
-            
             <div class="bill-top-bar">
                 <h2>📝 Create New Bill</h2>
-                <div class="form-group inline-date">
-                    <label>Date:</label>
-                    <input type="date" id="billDate" style="background:#fff; color:#000;">
-                </div>
+                <div class="form-group inline-date"><label>Date:</label><input type="date" id="billDate" style="background:#fff; color:#000;"></div>
             </div>
-
             <div class="bill-hotel-info">
                 <p><b>Hotel:</b> <span id="bHotelName"></span> | <b>Customer:</b> <span id="bCustomerName"></span></p>
                 <p><b>Address:</b> <span id="bAddress"></span></p>
                 <p><b>Old Balance:</b> ₹<span id="bOldBalance">0.00</span></p>
             </div>
-
             <div class="cart-section">
                 <h4>🛒 Cart Items</h4>
                 <div class="table-responsive">
                     <table class="cart-table">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Paper Rate</th>
-                                <th>Est. Cost</th>
-                                <th>Weight / Qty</th>
-                                <th>Total (₹)</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Product</th><th>Paper Rate</th><th>Est. Cost</th><th>Weight / Qty</th><th>Total (₹)</th></tr></thead>
                         <tbody id="cartTableBody"></tbody>
                     </table>
                 </div>
             </div>
-
             <div class="payment-section">
-                <div class="form-group">
-                    <label style="color:#475569;">Customer Paid (₹):</label>
-                    <input type="number" id="customerPaid" placeholder="Enter Paid Amount" oninput="window.calculateFinalSummary()" style="background:#fff; color:#000;">
-                </div>
-                
+                <div class="form-group"><label style="color:#475569;">Customer Paid (₹):</label><input type="number" id="customerPaid" oninput="window.calculateFinalSummary()" style="background:#fff; color:#000;"></div>
                 <div class="summary-box">
                     <p>Items Total: ₹<span id="itemsTotalAmt">0.00</span></p>
                     <p>Old Balance (+): ₹<span id="summaryOldBal">0.00</span></p>
@@ -207,7 +189,6 @@
                     <h3>Grand Total Balance: ₹<span id="finalBalanceAmt">0.00</span></h3>
                 </div>
             </div>
-
             <div class="modal-buttons">
                 <button class="btn btn-success" onclick="window.generateAndShareBill()">📥 Share WhatsApp & Bill</button>
                 <button class="btn" onclick="window.closeBillingModal()" style="background: #64748b; color: white;">❌ Exit / Cancel</button>
@@ -215,12 +196,9 @@
         </div>
     </div>
 
-    <!-- Premium Receipt Template for Image Generation -->
     <div id="receiptTemplate" class="receipt-template">
         <div class="receipt-header">
-            <div class="r-logo-box">
-                <img src="logo.png" alt="Logo" class="r-logo" onerror="this.style.display='none'">
-            </div>
+            <div class="r-logo-box"><img src="logo.png" alt="Logo" class="r-logo" onerror="this.style.display='none'"></div>
             <div class="r-brand-box">
                 <div class="r-top-arabic">مَاشَاءَاللَّه</div>
                 <h1 class="r-title">HALAL</h1>
@@ -229,52 +207,24 @@
                 <p class="r-branch-locations">Chettipalayam & Arisipalayam</p>
             </div>
         </div>
-
-        <div class="r-meta-box">
-            <div class="r-meta-item">📅 <b>Date:</b> <span id="rDateStr"></span></div>
-        </div>
-
+        <div class="r-meta-box"><div class="r-meta-item">📅 <b>Date:</b> <span id="rDateStr"></span></div></div>
         <div class="r-customer-card">
             <p>👤 <b>Customer Name:</b> <span id="rCustomerName"></span> (<span id="rHotelName"></span>)</p>
             <p>📍 <b>Address:</b> <span id="rAddress"></span></p>
         </div>
-
         <table class="r-table">
-            <thead>
-                <tr>
-                    <th style="width: 10%;">#</th>
-                    <th style="width: 50%;">Item</th>
-                    <th style="width: 20%;">Weight</th>
-                    <th style="width: 20%;">Total (₹)</th>
-                </tr>
-            </thead>
+            <thead><tr><th style="width: 10%;">#</th><th style="width: 50%;">Item</th><th style="width: 20%;">Weight</th><th style="width: 20%;">Total (₹)</th></tr></thead>
             <tbody id="rTableBody"></tbody>
         </table>
-
         <div class="r-summary-box">
-            <div class="r-sum-row">
-                <span>🛒 Items Total</span>
-                <span>₹ <span id="rItemsTotal">0.00</span></span>
-            </div>
-            <div class="r-sum-row">
-                <span>📜 Old Balance</span>
-                <span>₹ <span id="rOldBal">0.00</span></span>
-            </div>
-            <div class="r-sum-row" style="color: #059669;">
-                <span>💵 Customer Paid</span>
-                <span>- ₹ <span id="rPaid">0.00</span></span>
-            </div>
-            <div class="r-grand-total">
-                <span>Grand Total Balance</span>
-                <span>₹ <span id="rFinalBal">0.00</span></span>
-            </div>
+            <div class="r-sum-row"><span>🛒 Items Total</span><span>₹ <span id="rItemsTotal">0.00</span></span></div>
+            <div class="r-sum-row"><span>📜 Old Balance</span><span>₹ <span id="rOldBal">0.00</span></span></div>
+            <div class="r-sum-row" style="color: #059669;"><span>💵 Customer Paid</span><span>- ₹ <span id="rPaid">0.00</span></span></div>
+            <div class="r-grand-total"><span>Grand Total Balance</span><span>₹ <span id="rFinalBal">0.00</span></span></div>
         </div>
-
-        <div class="r-footer-banner">
-            <h3>THANK YOU • VISIT US AGAIN</h3>
-        </div>
+        <div class="r-footer-banner"><h3>THANK YOU • VISIT US AGAIN</h3></div>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <script type="module" src="script.js?v=1.9"></script>
 </body>
 </html>

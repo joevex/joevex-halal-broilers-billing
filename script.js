@@ -28,26 +28,227 @@ const PRODUCTS = [
 
 let activeHotel = null;
 let allStaffData = [];
+let allHotelsData = [];
+let allSalesData = [];
 
 window.addEventListener('DOMContentLoaded', () => {
+    let todayStr = new Date().toISOString().split('T')[0];
+    let dateInput = document.getElementById('reportFilterDate');
+    if (dateInput) dateInput.value = todayStr;
+
     fetchHotelsFromFirestore();
     fetchStaffFromFirestore();
+    fetchSalesFromFirestore();
 });
+
+// --- DATE-WISE HOTEL SUMMARY REPORT LOGIC ---
+window.generateOverallSummaryReport = function() {
+    let tbody = document.getElementById('overallReportBody');
+    let dateInput = document.getElementById('reportFilterDate');
+    let dateStrElem = document.getElementById('selectedReportDateStr');
+
+    if (!tbody || !dateInput) return;
+
+    let selectedDate = dateInput.value;
+    if (dateStrElem) dateStrElem.innerText = selectedDate;
+
+    tbody.innerHTML = '';
+
+    if (allHotelsData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#9ca3af;">No hotel records available.</td></tr>';
+        return;
+    }
+
+    let count = 1;
+    let anyDataFound = false;
+
+    allHotelsData.forEach(hotel => {
+        let hotelSalesForDate = allSalesData.filter(s => s.hotelName === hotel.hotelName && s.date === selectedDate);
+
+        let productMap = {};
+        let totalBillSum = 0;
+        let totalPaidSum = 0;
+
+        hotelSalesForDate.forEach(sale => {
+            totalBillSum += (sale.itemsTotal || 0);
+            totalPaidSum += (sale.paid || 0);
+
+            if (sale.items && sale.items.length > 0) {
+                sale.items.forEach(it => {
+                    if (!productMap[it.name]) productMap[it.name] = 0;
+                    productMap[it.name] += (it.weight || 0);
+                });
+            }
+        });
+
+        let productsHtml = '';
+        let pKeys = Object.keys(productMap);
+        if (pKeys.length > 0) {
+            anyDataFound = true;
+            pKeys.forEach(pName => {
+                productsHtml += `<span class="item-badge">▪️ ${pName}: <b>${productMap[pName].toFixed(2)} kg</b></span>`;
+            });
+        } else {
+            productsHtml = '<span style="color:#9ca3af;">No recent items</span>';
+        }
+
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${count++}</td>
+            <td><b>${hotel.hotelName}</b><br><span style="font-size:10px; color:#9ca3af;">${hotel.customerName}</span></td>
+            <td>${productsHtml}</td>
+            <td><b>₹${totalBillSum.toFixed(2)}</b></td>
+            <td style="color:#34d399;">₹${totalPaidSum.toFixed(2)}</td>
+            <td style="color:#f87171; font-weight:bold;">₹${(hotel.oldBalance || 0).toFixed(2)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    if (!anyDataFound && allHotelsData.length > 0) {
+        tbody.innerHTML += `<tr><td colspan="6" style="text-align:center; color:#f59e0b; font-size:12px; padding:10px;">⚠️ No bills created on ${selectedDate}</td></tr>`;
+    }
+}
+
+// --- EXPORT REPORT AS IMAGE ---
+window.exportSummaryImage = function() {
+    let reportElem = document.getElementById('summaryReportContainer');
+    let dateInput = document.getElementById('reportFilterDate');
+    let selectedDate = dateInput ? dateInput.value : 'Report';
+
+    if (!reportElem) return;
+
+    html2canvas(reportElem, { scale: 2, backgroundColor: '#1f2937' }).then(canvas => {
+        let link = document.createElement('a');
+        link.download = `Halal_Broilers_Report_${selectedDate}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    });
+};
+
+// --- SEND REPORT IMAGE TO WHATSAPP ---
+window.sendReportToWhatsApp = function() {
+    let reportElem = document.getElementById('summaryReportContainer');
+    let dateInput = document.getElementById('reportFilterDate');
+    let selectedDate = dateInput ? dateInput.value : 'Report';
+
+    if (!reportElem) return;
+
+    html2canvas(reportElem, { scale: 2, backgroundColor: '#1f2937' }).then(canvas => {
+        canvas.toBlob(blob => {
+            let file = new File([blob], `Halal_Broilers_Report_${selectedDate}.png`, { type: 'image/png' });
+            let message = encodeURIComponent(`*HALAL BROILERS* 🍗\nDaily Sales & Balance Summary Report\nDate: ${selectedDate}\n\nPlease check the attached report image.`);
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                navigator.share({
+                    files: [file],
+                    title: 'Halal Broilers Daily Report',
+                    text: `Daily Summary Report for ${selectedDate}`
+                }).catch(err => console.log(err));
+            } else {
+                let link = document.createElement('a');
+                link.download = `Halal_Broilers_Report_${selectedDate}.png`;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                window.open(`https://wa.me/?text=${message}`, '_blank');
+            }
+        });
+    });
+};
+
+function fetchSalesFromFirestore() {
+    onSnapshot(collection(db, "sales"), (snapshot) => {
+        allSalesData = [];
+        let todaySum = 0, weeklySum = 0, monthlySum = 0;
+        let today = new Date();
+        let todayStr = today.toISOString().split('T')[0];
+
+        let sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+
+        snapshot.forEach(docSnap => {
+            let sale = docSnap.data();
+            sale.id = docSnap.id;
+            allSalesData.push(sale);
+
+            if (sale.date && sale.itemsTotal) {
+                let saleDate = new Date(sale.date);
+
+                if (sale.date === todayStr) todaySum += sale.itemsTotal;
+                if (saleDate >= sevenDaysAgo && saleDate <= today) weeklySum += sale.itemsTotal;
+                if (saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear) monthlySum += sale.itemsTotal;
+            }
+        });
+
+        document.getElementById('todaySalesAmt').innerText = `₹${todaySum.toFixed(2)}`;
+        document.getElementById('weeklySalesAmt').innerText = `₹${weeklySum.toFixed(2)}`;
+        document.getElementById('monthlySalesAmt').innerText = `₹${monthlySum.toFixed(2)}`;
+
+        window.generateOverallSummaryReport();
+    });
+}
+
+function fetchHotelsFromFirestore() {
+    let list = document.getElementById('hotelList');
+    if (!list) return;
+
+    onSnapshot(collection(db, "hotels"), (snapshot) => {
+        list.innerHTML = '';
+        allHotelsData = [];
+
+        if (snapshot.empty) {
+            list.innerHTML = '<li style="text-align:center; color:#9ca3af; font-size:13px; padding:10px;">No hotels found.</li>';
+            window.generateOverallSummaryReport();
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            let hotel = docSnap.data();
+            hotel.docId = docSnap.id;
+            allHotelsData.push(hotel);
+
+            let li = document.createElement('li');
+            li.className = 'hotel-item';
+            li.innerHTML = `
+                <div class="hotel-info">
+                    <h4>🏨 ${hotel.hotelName}</h4>
+                    <p>👤 ${hotel.customerName} | 📞 ${hotel.contactNumber || 'N/A'}</p>
+                    <p style="font-size:11px; color:#9ca3af;">📍 ${hotel.address}</p>
+                    <p>Old Balance: <span class="balance-tag">₹${(hotel.oldBalance || 0).toFixed(2)}</span></p>
+                </div>
+                <div class="actions">
+                    <button class="btn-sm btn-bill" onclick='window.openBillingModal(${JSON.stringify(hotel)})'>Next Bill 🧾</button>
+                    <button class="btn-sm btn-edit" onclick='window.editHotel(${JSON.stringify(hotel)})'>✏️</button>
+                    <button class="btn-sm btn-del" onclick='window.deleteHotel("${hotel.docId}")'>🗑️</button>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+
+        window.generateOverallSummaryReport();
+    });
+}
 
 // --- HOTEL MANAGEMENT LOGIC ---
 window.openAddHotelModal = function() {
-    document.getElementById('hotelModalTitle').innerText = '➕ Add Hotel';
-    document.getElementById('editHotelId').value = '';
-    document.getElementById('hotelName').value = '';
-    document.getElementById('customerName').value = '';
-    document.getElementById('contactNumber').value = '';
-    document.getElementById('address').value = '';
-    document.getElementById('oldBalance').value = '';
-    document.getElementById('hotelModal').style.display = 'flex';
+    let modal = document.getElementById('hotelModal');
+    if (modal) {
+        document.getElementById('hotelModalTitle').innerText = '➕ Add Hotel';
+        document.getElementById('editHotelId').value = '';
+        document.getElementById('hotelName').value = '';
+        document.getElementById('customerName').value = '';
+        document.getElementById('contactNumber').value = '';
+        document.getElementById('address').value = '';
+        document.getElementById('oldBalance').value = '';
+        modal.style.display = 'flex';
+    }
 };
 
 window.closeHotelModal = function() {
-    document.getElementById('hotelModal').style.display = 'none';
+    let modal = document.getElementById('hotelModal');
+    if (modal) modal.style.display = 'none';
 };
 
 window.saveHotel = async function() {
@@ -84,41 +285,6 @@ window.saveHotel = async function() {
     }
 };
 
-function fetchHotelsFromFirestore() {
-    let list = document.getElementById('hotelList');
-    if (!list) return;
-
-    onSnapshot(collection(db, "hotels"), (snapshot) => {
-        list.innerHTML = '';
-        if (snapshot.empty) {
-            list.innerHTML = '<li style="text-align:center; color:#9ca3af; font-size:13px; padding:10px;">No hotels found.</li>';
-            return;
-        }
-
-        snapshot.forEach(docSnap => {
-            let hotel = docSnap.data();
-            hotel.docId = docSnap.id;
-
-            let li = document.createElement('li');
-            li.className = 'hotel-item';
-            li.innerHTML = `
-                <div class="hotel-info">
-                    <h4>🏨 ${hotel.hotelName}</h4>
-                    <p>👤 ${hotel.customerName} | 📞 ${hotel.contactNumber || 'N/A'}</p>
-                    <p style="font-size:11px; color:#9ca3af;">📍 ${hotel.address}</p>
-                    <p>Old Balance: <span class="balance-tag">₹${(hotel.oldBalance || 0).toFixed(2)}</span></p>
-                </div>
-                <div class="actions">
-                    <button class="btn-sm btn-bill" onclick='window.openBillingModal(${JSON.stringify(hotel)})'>Next Bill 🧾</button>
-                    <button class="btn-sm btn-edit" onclick='window.editHotel(${JSON.stringify(hotel)})'>✏️</button>
-                    <button class="btn-sm btn-del" onclick='window.deleteHotel("${hotel.docId}")'>🗑️</button>
-                </div>
-            `;
-            list.appendChild(li);
-        });
-    });
-}
-
 window.editHotel = function(hotel) {
     document.getElementById('hotelModalTitle').innerText = '✏️ Edit Hotel';
     document.getElementById('editHotelId').value = hotel.docId;
@@ -138,18 +304,22 @@ window.deleteHotel = async function(docId) {
 
 // --- STAFF MANAGEMENT LOGIC ---
 window.openAddStaffModal = function() {
-    document.getElementById('staffModalTitle').innerText = '➕ Add Staff Profile';
-    document.getElementById('editStaffId').value = '';
-    document.getElementById('staffName').value = '';
-    document.getElementById('staffMobile').value = '';
-    document.getElementById('staffRole').value = 'Billing Staff';
-    document.getElementById('staffSalary').value = '';
-    document.getElementById('staffStatus').value = 'Active';
-    document.getElementById('staffModal').style.display = 'flex';
+    let modal = document.getElementById('staffModal');
+    if (modal) {
+        document.getElementById('staffModalTitle').innerText = '➕ Add Staff Profile';
+        document.getElementById('editStaffId').value = '';
+        document.getElementById('staffName').value = '';
+        document.getElementById('staffMobile').value = '';
+        document.getElementById('staffRole').value = 'Billing Staff';
+        document.getElementById('staffSalary').value = '';
+        document.getElementById('staffStatus').value = 'Active';
+        modal.style.display = 'flex';
+    }
 };
 
 window.closeStaffModal = function() {
-    document.getElementById('staffModal').style.display = 'none';
+    let modal = document.getElementById('staffModal');
+    if (modal) modal.style.display = 'none';
 };
 
 window.saveStaff = async function() {
@@ -377,6 +547,19 @@ window.generateAndShareBill = async function() {
     let finalBal = parseFloat(document.getElementById('finalBalanceAmt').innerText);
     let billDate = document.getElementById('billDate').value;
 
+    let billedItems = [];
+    PRODUCTS.forEach(p => {
+        let wt = parseFloat(document.getElementById(`wt_${p.id}`).value) || 0;
+        let amt = parseFloat(document.getElementById(`amt_${p.id}`).innerText) || 0;
+        if (wt > 0 || amt > 0) {
+            billedItems.push({
+                name: p.name,
+                weight: wt,
+                total: amt
+            });
+        }
+    });
+
     document.getElementById('rDateStr').innerText = billDate;
     document.getElementById('rHotelName').innerText = activeHotel.hotelName;
     document.getElementById('rCustomerName').innerText = `${activeHotel.customerName} (${activeHotel.contactNumber || ''})`;
@@ -391,24 +574,21 @@ window.generateAndShareBill = async function() {
     rTableBody.innerHTML = '';
 
     let count = 1;
-    PRODUCTS.forEach(p => {
-        let wt = parseFloat(document.getElementById(`wt_${p.id}`).value) || 0;
-        let amt = parseFloat(document.getElementById(`amt_${p.id}`).innerText) || 0;
-        if (wt > 0 || amt > 0) {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${count++}</td>
-                <td><b>${p.name}</b></td>
-                <td>${wt} kg</td>
-                <td><b>₹${amt.toFixed(2)}</b></td>
-            `;
-            rTableBody.appendChild(tr);
-        }
+    billedItems.forEach(it => {
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${count++}</td>
+            <td><b>${it.name}</b></td>
+            <td>${it.weight} kg</td>
+            <td><b>₹${it.total.toFixed(2)}</b></td>
+        `;
+        rTableBody.appendChild(tr);
     });
 
     await addDoc(collection(db, "sales"), {
         date: billDate,
         hotelName: activeHotel.hotelName,
+        items: billedItems,
         itemsTotal: itemsTotal,
         paid: paid,
         finalBalance: finalBal,
