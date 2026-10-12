@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Halal Broilers - Smart Billing</title>
+    <title>Halal Broilers - Billing & ERP</title>
     <link rel="stylesheet" href="style.css">
     
     <!-- html2canvas for Receipt Image Generation -->
@@ -11,17 +11,18 @@
 </head>
 <body>
 
-    <!-- Main Dashboard -->
-    <div id="mainContent" class="container">
+    <!-- Main Single Page Container -->
+    <div class="container">
+        <!-- Header -->
         <header class="app-header">
             <img src="logo.png" alt="Logo" class="header-logo-img" onerror="this.style.display='none'">
             <div>
                 <h1>HALAL BROILERS</h1>
-                <p>Wholesale & Retail - Billing System</p>
+                <p>Wholesale & Retail - Billing & ERP System</p>
             </div>
         </header>
 
-        <!-- Hotel Management Section -->
+        <!-- 1. HOTEL & CUSTOMER BILLING SECTION -->
         <section class="card">
             <div class="card-header">
                 <h3>🏨 Hotel & Customer List</h3>
@@ -30,6 +31,37 @@
             <ul id="hotelList" class="hotel-list">
                 <!-- JS மூலம் ஹோட்டல்கள் வரும் -->
             </ul>
+        </section>
+
+        <!-- 2. STAFF MANAGEMENT SECTION (Without Attendance) -->
+        <section class="card staff-card-wrapper">
+            <div class="card-header">
+                <h3>👥 Staff Management</h3>
+                <button class="btn-sm btn-success" onclick="window.openAddStaffModal()">+ Add Staff</button>
+            </div>
+
+            <!-- Staff Stats (Only Total Staff & Pending Salary) -->
+            <div class="staff-stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div>
+                        <p class="stat-label">Total Staff</p>
+                        <h3 id="totalStaffCount">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">💰</div>
+                    <div>
+                        <p class="stat-label">Salary Pending</p>
+                        <h3 id="totalPendingSalary">₹0.00</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff Directory List -->
+            <div id="staffListContainer" class="staff-grid">
+                <!-- JS மூலம் ஸ்டாஃப் கார்டுகள் வரும் -->
+            </div>
         </section>
     </div>
 
@@ -64,16 +96,76 @@
         </div>
     </div>
 
+    <!-- Add/Edit Staff Modal -->
+    <div id="staffModal" class="modal">
+        <div class="modal-content dark-modal">
+            <span class="close-btn" onclick="window.closeStaffModal()">&times;</span>
+            <h3 id="staffModalTitle" style="color: #f3f4f6; margin-bottom: 15px;">➕ Add Staff Profile</h3>
+            <input type="hidden" id="editStaffId">
+            
+            <div class="form-group">
+                <label>Staff Name</label>
+                <input type="text" id="staffName" placeholder="Enter staff name">
+            </div>
+            <div class="form-group">
+                <label>Mobile Number</label>
+                <input type="text" id="staffMobile" placeholder="10 digit mobile">
+            </div>
+            <div class="form-group">
+                <label>Role</label>
+                <select id="staffRole">
+                    <option value="Manager">Manager</option>
+                    <option value="Billing Staff">Billing Staff</option>
+                    <option value="Delivery / Helper">Delivery / Helper</option>
+                    <option value="Butcher">Butcher</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Monthly Salary (₹)</label>
+                <input type="number" id="staffSalary" placeholder="18000">
+            </div>
+            <div class="form-group">
+                <label>Staff Status</label>
+                <select id="staffStatus">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+            <button class="btn btn-success" onclick="window.saveStaff()" style="margin-top: 10px;">💾 Save Staff</button>
+        </div>
+    </div>
+
+    <!-- Salary Payment Modal -->
+    <div id="salaryModal" class="modal">
+        <div class="modal-content dark-modal">
+            <span class="close-btn" onclick="window.closeSalaryModal()">&times;</span>
+            <h3 style="color: #f3f4f6; margin-bottom: 15px;">💵 Record Salary Payment</h3>
+            <input type="hidden" id="payStaffId">
+            
+            <div class="staff-mini-card" id="payStaffInfo" style="margin-bottom: 12px;"></div>
+
+            <div class="form-group">
+                <label>Payment Amount (₹)</label>
+                <input type="number" id="payAmount" placeholder="Enter amount">
+            </div>
+            <div class="form-group">
+                <label>Note</label>
+                <input type="text" id="payNote" value="Salary Advance / Payment">
+            </div>
+            <button class="btn btn-success" onclick="window.processSalaryPayment()" style="margin-top: 10px;">💰 Save Payment</button>
+        </div>
+    </div>
+
     <!-- Billing & Cart Modal -->
     <div id="billingModal" class="modal">
-        <div class="modal-content large-modal">
-            <span class="close-btn" onclick="window.closeBillingModal()">&times;</span>
+        <div class="modal-content large-modal" style="background:#fff; color:#1e293b;">
+            <span class="close-btn" onclick="window.closeBillingModal()" style="color: #dc2626; font-size: 28px;">&times;</span>
             
             <div class="bill-top-bar">
                 <h2>📝 Create New Bill</h2>
                 <div class="form-group inline-date">
                     <label>Date:</label>
-                    <input type="date" id="billDate">
+                    <input type="date" id="billDate" style="background:#fff; color:#000;">
                 </div>
             </div>
 
@@ -83,7 +175,6 @@
                 <p><b>Old Balance:</b> ₹<span id="bOldBalance">0.00</span></p>
             </div>
 
-            <!-- Cart Products Table -->
             <div class="cart-section">
                 <h4>🛒 Cart Items</h4>
                 <div class="table-responsive">
@@ -97,18 +188,15 @@
                                 <th>Total (₹)</th>
                             </tr>
                         </thead>
-                        <tbody id="cartTableBody">
-                            <!-- JS மூலம் பொருட்கள் வரும் -->
-                        </tbody>
+                        <tbody id="cartTableBody"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Payment Details Section -->
             <div class="payment-section">
                 <div class="form-group">
-                    <label>Customer Paid (₹):</label>
-                    <input type="number" id="customerPaid" placeholder="Enter Paid Amount" oninput="window.calculateFinalSummary()">
+                    <label style="color:#475569;">Customer Paid (₹):</label>
+                    <input type="number" id="customerPaid" placeholder="Enter Paid Amount" oninput="window.calculateFinalSummary()" style="background:#fff; color:#000;">
                 </div>
                 
                 <div class="summary-box">
@@ -129,20 +217,16 @@
 
     <!-- Premium Receipt Template for Image Generation -->
     <div id="receiptTemplate" class="receipt-template">
-        <div class="r-top-arabic">مَاشَاءَاللَّه</div>
-        
         <div class="receipt-header">
             <div class="r-logo-box">
                 <img src="logo.png" alt="Logo" class="r-logo" onerror="this.style.display='none'">
             </div>
             <div class="r-brand-box">
-                <h1 class="r-title">HALAL BROILERS</h1>
-                <p class="r-subtitle-tag">WHOLESALE & RETAIL</p>
+                <div class="r-top-arabic">مَاشَاءَاللَّه</div>
+                <h1 class="r-title">HALAL</h1>
+                <div class="r-subtitle-tag">BROILERS</div>
                 <p class="r-subtitle-branch">பண்ணை விலையில் கிடைக்கும்</p>
                 <p class="r-branch-locations">Chettipalayam & Arisipalayam</p>
-            </div>
-            <div class="r-top-contact">
-                📞 88704 38109<br>📞 98949 15756
             </div>
         </div>
 
@@ -164,9 +248,7 @@
                     <th style="width: 20%;">Total (₹)</th>
                 </tr>
             </thead>
-            <tbody id="rTableBody">
-                <!-- JS மூலம் பில் விவரங்கள் வரும் -->
-            </tbody>
+            <tbody id="rTableBody"></tbody>
         </table>
 
         <div class="r-summary-box">
@@ -193,7 +275,6 @@
         </div>
     </div>
 
-    <!-- Main JS as Module -->
     <script type="module" src="script.js"></script>
 </body>
 </html>

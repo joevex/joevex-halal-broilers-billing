@@ -26,8 +26,15 @@ const PRODUCTS = [
     { id: 9, name: "Waste", type: "formula2" }
 ];
 
-fetchHotelsFromFirestore();
+let activeHotel = null;
+let allStaffData = [];
 
+window.addEventListener('DOMContentLoaded', () => {
+    fetchHotelsFromFirestore();
+    fetchStaffFromFirestore();
+});
+
+// --- HOTEL MANAGEMENT LOGIC ---
 window.openAddHotelModal = function() {
     document.getElementById('hotelModalTitle').innerText = '➕ Add Hotel';
     document.getElementById('editHotelId').value = '';
@@ -84,7 +91,7 @@ function fetchHotelsFromFirestore() {
     onSnapshot(collection(db, "hotels"), (snapshot) => {
         list.innerHTML = '';
         if (snapshot.empty) {
-            list.innerHTML = '<li style="text-align:center; color:#64748b; font-size:13px; padding:10px;">No hotels found.</li>';
+            list.innerHTML = '<li style="text-align:center; color:#9ca3af; font-size:13px; padding:10px;">No hotels found.</li>';
             return;
         }
 
@@ -98,7 +105,7 @@ function fetchHotelsFromFirestore() {
                 <div class="hotel-info">
                     <h4>🏨 ${hotel.hotelName}</h4>
                     <p>👤 ${hotel.customerName} | 📞 ${hotel.contactNumber || 'N/A'}</p>
-                    <p style="font-size:11px; color:#64748b;">📍 ${hotel.address}</p>
+                    <p style="font-size:11px; color:#9ca3af;">📍 ${hotel.address}</p>
                     <p>Old Balance: <span class="balance-tag">₹${(hotel.oldBalance || 0).toFixed(2)}</span></p>
                 </div>
                 <div class="actions">
@@ -129,8 +136,170 @@ window.deleteHotel = async function(docId) {
     }
 };
 
-let activeHotel = null;
+// --- STAFF MANAGEMENT LOGIC ---
+window.openAddStaffModal = function() {
+    document.getElementById('staffModalTitle').innerText = '➕ Add Staff Profile';
+    document.getElementById('editStaffId').value = '';
+    document.getElementById('staffName').value = '';
+    document.getElementById('staffMobile').value = '';
+    document.getElementById('staffRole').value = 'Billing Staff';
+    document.getElementById('staffSalary').value = '';
+    document.getElementById('staffStatus').value = 'Active';
+    document.getElementById('staffModal').style.display = 'flex';
+};
 
+window.closeStaffModal = function() {
+    document.getElementById('staffModal').style.display = 'none';
+};
+
+window.saveStaff = async function() {
+    let docId = document.getElementById('editStaffId').value;
+    let name = document.getElementById('staffName').value.trim();
+    let mobile = document.getElementById('staffMobile').value.trim();
+    let role = document.getElementById('staffRole').value;
+    let salary = parseFloat(document.getElementById('staffSalary').value) || 0;
+    let status = document.getElementById('staffStatus').value;
+
+    if (!name || !mobile) {
+        alert('Please enter staff name and mobile number!');
+        return;
+    }
+
+    let staffData = {
+        name,
+        mobile,
+        role,
+        monthlySalary: salary,
+        status,
+        updatedAt: serverTimestamp()
+    };
+
+    try {
+        if (docId) {
+            await updateDoc(doc(db, "staff", docId), staffData);
+        } else {
+            staffData.paidSalary = 0;
+            await addDoc(collection(db, "staff"), staffData);
+        }
+        window.closeStaffModal();
+    } catch (e) {
+        console.error("Error saving staff: ", e);
+    }
+};
+
+function fetchStaffFromFirestore() {
+    let container = document.getElementById('staffListContainer');
+    if (!container) return;
+
+    onSnapshot(collection(db, "staff"), (snapshot) => {
+        container.innerHTML = '';
+        allStaffData = [];
+        let totalCount = 0, totalPending = 0;
+
+        if (snapshot.empty) {
+            container.innerHTML = '<p style="color:#9ca3af; font-size:13px; text-align:center; grid-column: 1/-1;">No staff records found.</p>';
+            document.getElementById('totalStaffCount').innerText = '0';
+            document.getElementById('totalPendingSalary').innerText = '₹0.00';
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            let staff = docSnap.data();
+            staff.docId = docSnap.id;
+            allStaffData.push(staff);
+            totalCount++;
+
+            let monthly = staff.monthlySalary || 0;
+            let paid = staff.paidSalary || 0;
+            let pending = monthly - paid;
+            totalPending += pending;
+
+            let div = document.createElement('div');
+            div.className = 'staff-card-box';
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <h4>👤 ${staff.name}</h4>
+                        <p>${staff.role} | 📞 ${staff.mobile}</p>
+                    </div>
+                    <span style="font-size:10px; padding:3px 8px; border-radius:4px; font-weight:bold; background:${staff.status === 'Active' ? '#064e3b' : '#7f1d1d'}; color:${staff.status === 'Active' ? '#34d399' : '#fca5a5'};">${staff.status}</span>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; font-size:11px; text-align:center; margin:10px 0; background:#111827; padding:8px; border-radius:6px;">
+                    <div><span style="color:#9ca3af; display:block;">MONTHLY</span>₹${monthly}</div>
+                    <div><span style="color:#9ca3af; display:block;">PAID</span>₹${paid}</div>
+                    <div><span style="color:#9ca3af; display:block;">PENDING</span><strong style="color:#f59e0b;">₹${pending}</strong></div>
+                </div>
+                <div class="actions">
+                    <button class="btn-sm btn-primary" style="flex:1; background:#b45309;" onclick='window.openSalaryModal(${JSON.stringify(staff)})'>💵 Salary</button>
+                    <button class="btn-sm btn-edit" onclick='window.editStaff(${JSON.stringify(staff)})'>✏️</button>
+                    <button class="btn-sm btn-del" onclick='window.deleteStaff("${staff.docId}")'>🗑️</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        document.getElementById('totalStaffCount').innerText = totalCount;
+        document.getElementById('totalPendingSalary').innerText = `₹${totalPending.toFixed(2)}`;
+    });
+};
+
+window.editStaff = function(staff) {
+    document.getElementById('staffModalTitle').innerText = '✏️ Edit Staff Profile';
+    document.getElementById('editStaffId').value = staff.docId;
+    document.getElementById('staffName').value = staff.name;
+    document.getElementById('staffMobile').value = staff.mobile;
+    document.getElementById('staffRole').value = staff.role;
+    document.getElementById('staffSalary').value = staff.monthlySalary;
+    document.getElementById('staffStatus').value = staff.status;
+    document.getElementById('staffModal').style.display = 'flex';
+};
+
+window.deleteStaff = async function(docId) {
+    if (confirm('Do you want to delete this staff?')) {
+        await deleteDoc(doc(db, "staff", docId));
+    }
+};
+
+window.openSalaryModal = function(staff) {
+    document.getElementById('payStaffId').value = staff.docId;
+    let monthly = staff.monthlySalary || 0;
+    let paid = staff.paidSalary || 0;
+    let pending = monthly - paid;
+
+    document.getElementById('payStaffInfo').innerHTML = `
+        <h4 style="color:#fff; margin-bottom:4px;">${staff.name} (${staff.role})</h4>
+        <p style="font-size:12px; color:#9ca3af;">Monthly: ₹${monthly} | Paid: ₹${paid} | Pending: <strong style="color:#f59e0b;">₹${pending}</strong></p>
+    `;
+    document.getElementById('payAmount').value = '';
+    document.getElementById('salaryModal').style.display = 'flex';
+};
+
+window.closeSalaryModal = function() {
+    document.getElementById('salaryModal').style.display = 'none';
+};
+
+window.processSalaryPayment = async function() {
+    let docId = document.getElementById('payStaffId').value;
+    let amount = parseFloat(document.getElementById('payAmount').value) || 0;
+    if (amount <= 0) {
+        alert('Please enter valid amount!');
+        return;
+    }
+
+    let staffDoc = allStaffData.find(s => s.docId === docId);
+    if (!staffDoc) return;
+
+    let newPaid = (staffDoc.paidSalary || 0) + amount;
+
+    await updateDoc(doc(db, "staff", docId), {
+        paidSalary: newPaid
+    });
+
+    window.closeSalaryModal();
+    alert('Salary payment recorded successfully!');
+};
+
+// --- BILLING LOGIC ---
 window.openBillingModal = function(hotel) {
     activeHotel = hotel;
     document.getElementById('bHotelName').innerText = hotel.hotelName;
