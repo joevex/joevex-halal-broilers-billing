@@ -107,41 +107,62 @@ body { background-color: #07090e; color: #f3f4f6; min-height: 100vh; padding: 12
 .large-modal { 
     background: #ffffff !important; 
     color: #0f172a !important; 
-    width: 96%; 
-    max-width: 780px; 
-    padding: 22px; 
-    border-radius: 20px; 
+    width: 98% !important; 
+    max-width: 720px !important; 
+    padding: 16px !important; 
+    border-radius: 16px !important; 
     border: 2px solid #059669; 
     position: relative; 
+    margin: auto;
 }
 
-.close-btn { position: absolute; right: 16px; top: 14px; font-size: 26px; cursor: pointer; color: #dc2626; font-weight: bold; z-index: 5; }
-.form-group { margin-bottom: 12px; }
-.form-group label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; color: #334155; }
-input, textarea, select { width: 100%; padding: 10px; border: 1px solid #94a3b8; background: #ffffff; color: #000000; border-radius: 10px; font-size: 13px; font-weight: 600; }
+.close-btn { position: absolute; right: 14px; top: 12px; font-size: 26px; cursor: pointer; color: #dc2626; font-weight: bold; z-index: 5; }
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; font-size: 11px; font-weight: 700; margin-bottom: 3px; color: #334155; }
+input, textarea, select { width: 100%; padding: 8px; border: 1px solid #94a3b8; background: #ffffff; color: #000000; border-radius: 8px; font-size: 12px; font-weight: 600; }
 
-.bill-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
-.bill-top-bar h2 { color: #064e3b; font-weight: 900; font-size: 20px; }
-.inline-date { width: 160px; margin-bottom: 0; }
-.bill-hotel-info { background: #ecfdf5; color: #064e3b; padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; border: 1px solid #a7f3d0; font-weight: 600; line-height: 1.5; }
+.bill-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
+.bill-top-bar h2 { color: #064e3b; font-weight: 900; font-size: 18px; }
+.inline-date { width: 140px; margin-bottom: 0; }
+.bill-hotel-info { background: #ecfdf5; color: #064e3b; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px; border: 1px solid #a7f3d0; font-weight: 600; line-height: 1.4; }
 
-.cart-section h4 { color: #065f46; font-size: 15px; margin-bottom: 8px; font-weight: 800; }
-.table-responsive { overflow-x: auto; margin-bottom: 14px; -webkit-overflow-scrolling: touch; border-radius: 10px; border: 1px solid #cbd5e1; }
-.cart-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 550px; background: #ffffff; }
-.cart-table th { background: #059669; color: #ffffff; font-weight: 800; padding: 10px; text-align: center; font-size: 13px; border: 1px solid #047857; }
-.cart-table td { border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #0f172a !important; font-weight: 700; background: #ffffff !important; }
-.cart-table td:first-child { text-align: left; color: #000000 !important; font-weight: 800; }
-.cart-table input { width: 75px; text-align: center; padding: 6px; color: #000000 !important; background: #f8fafc !important; border: 1.5px solid #059669; border-radius: 6px; font-weight: 800; font-size: 13px; }
+/* RESPONSIVE CART TABLE - NO SIDE SCROLL ON MOBILE */
+.cart-section h4 { color: #065f46; font-size: 14px; margin-bottom: 6px; font-weight: 800; }
+.table-responsive { width: 100%; overflow-x: hidden; margin-bottom: 10px; border-radius: 8px; border: 1px solid #cbd5e1; }
+.cart-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 11px; background: #ffffff; }
+.cart-table th { background: #059669; color: #ffffff; font-weight: 800; padding: 6px 4px; text-align: center; font-size: 11px; border: 1px solid #047857; word-break: break-word; }
+.cart-table td { border: 1px solid #cbd5e1; padding: 6px 4px; text-align: center; color: #0f172a !important; font-weight: 700; background: #ffffff !important; word-break: break-word; }
+.cart-table td:first-child { text-align: left; color: #000000 !important; font-weight: 800; font-size: 11px; width: 32%; }
+.cart-table th:nth-child(2), .cart-table td:nth-child(2),
+.cart-table th:nth-child(3), .cart-table td:nth-child(3),
+.cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 17%; }
+.cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 17%; }
 
-.payment-section { background: #f0fdf4; color: #0f172a; padding: 14px; border-radius: 12px; margin-bottom: 14px; border: 1px solid #bbf7d0; }
-.summary-box { font-size: 13px; margin-top: 8px; line-height: 1.7; font-weight: 700; }
-.summary-box h3 { color: #047857; margin-top: 6px; font-size: 18px; font-weight: 900; }
-.modal-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
-.btn { padding: 12px; border: none; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; }
+.cart-table input { width: 100% !important; max-width: 55px; text-align: center; padding: 4px; color: #000000 !important; background: #f8fafc !important; border: 1.5px solid #059669; border-radius: 6px; font-weight: 800; font-size: 11px; margin: 0 auto; display: block; }
+.cart-table input:focus { background: #ffffff !important; border-color: #047857; outline: 2px solid #a7f3d0; }
 
-/* RECEIPT TEMPLATE */
+.payment-section { background: #f0fdf4; color: #0f172a; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #bbf7d0; }
+.summary-box { font-size: 12px; margin-top: 6px; line-height: 1.5; font-weight: 700; }
+.summary-box h3 { color: #047857; margin-top: 4px; font-size: 16px; font-weight: 900; }
+.modal-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { padding: 10px; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; }
+
+/* RECEIPT TEMPLATE - PROPERLY HIDDEN OFFSCREEN */
 .receipt-template { 
-    position: fixed; top: -9999px; left: -9999px; width: 600px; background: #ffffff; padding: 24px; font-family: Arial, sans-serif; color: #111111; border: 2px solid #333333; border-radius: 12px; box-sizing: border-box; z-index: -1;
+    position: fixed; 
+    top: -9999px; 
+    left: -9999px; 
+    width: 600px; 
+    background: #ffffff; 
+    padding: 24px; 
+    font-family: Arial, sans-serif; 
+    color: #111111; 
+    border: 2px solid #333333; 
+    border-radius: 12px; 
+    box-sizing: border-box; 
+    z-index: -999; 
+    opacity: 0;
+    pointer-events: none;
 }
 .receipt-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #b45309; padding-bottom: 15px; margin-bottom: 15px; gap: 15px; }
 .r-logo-box { flex-shrink: 0; }
@@ -173,10 +194,10 @@ input, textarea, select { width: 100%; padding: 10px; border: 1px solid #94a3b8;
 .password-toggle-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 16px; user-select: none; z-index: 10; opacity: 0.7; transition: 0.2s; }
 
 @media screen and (max-width: 640px) {
-    body { padding: 8px; }
-    .card.premium-card { padding: 12px; }
+    body { padding: 6px; }
+    .card.premium-card { padding: 10px; }
     .bill-top-bar { flex-direction: column; align-items: flex-start; }
     .inline-date { width: 100%; }
     .modal-buttons { flex-direction: column; }
-    .large-modal { width: 98%; padding: 14px; }
+    .large-modal { width: 100% !important; padding: 10px !important; }
 }

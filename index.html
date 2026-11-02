@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Halal Broilers - Billing & ERP</title>
-    <link rel="stylesheet" href="style.css?v=10.0">
+    <link rel="stylesheet" href="style.css?v=12.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -76,7 +76,7 @@
             <ul id="hotelList" class="hotel-list"></ul>
         </section>
 
-        <!-- DATE-WISE & MONTH-WISE SALES SUMMARY REPORT -->
+        <!-- SALES SUMMARY REPORT -->
         <section class="card premium-card">
             <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
                 <h3 data-en="📋 Sales Report" data-ta="📋 விற்பனை அறிக்கை">📋 விற்பனை அறிக்கை</h3>
@@ -86,7 +86,6 @@
                 </div>
             </div>
 
-            <!-- Report Mode Selector (Daily vs Monthly) -->
             <div class="filter-wrapper" style="flex-wrap: wrap; gap: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <label>Report Type:</label>
@@ -124,6 +123,7 @@
                             </tr>
                         </thead>
                         <tbody id="overallReportBody"></tbody>
+                        <tfoot id="overallReportFoot"></tfoot>
                     </table>
                 </div>
             </div>
@@ -294,7 +294,7 @@
         <div class="r-footer-banner"><h3>THANK YOU • VISIT US AGAIN</h3></div>
     </div>
 
-    <script type="module" src="script.js?v=10.0"></script>
+    <script type="module" src="script.js?v=12.0"></script>
     <script>
         function switchLanguage(lang) {
             localStorage.setItem('app_lang', lang);
@@ -323,4 +323,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

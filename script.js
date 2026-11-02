@@ -176,23 +176,25 @@ function setupStaticEventListeners() {
 
 function generateOverallSummaryReport() {
     let tbody = document.getElementById('overallReportBody');
+    let tfoot = document.getElementById('overallReportFoot');
     let mode = document.getElementById('reportModeSelect')?.value || 'daily';
     let dateStrElem = document.getElementById('selectedReportDateStr');
 
-    if (!tbody) return;
+    if (!tbody || !tfoot) return;
 
     let filterVal = '';
     if (mode === 'monthly') {
         let monthInput = document.getElementById('reportFilterMonth');
-        filterVal = monthInput ? monthInput.value : ''; // YYYY-MM
+        filterVal = monthInput ? monthInput.value : ''; 
         if (dateStrElem) dateStrElem.innerText = `Month: ${filterVal}`;
     } else {
         let dateInput = document.getElementById('reportFilterDate');
-        filterVal = dateInput ? dateInput.value : ''; // YYYY-MM-DD
+        filterVal = dateInput ? dateInput.value : ''; 
         if (dateStrElem) dateStrElem.innerText = filterVal;
     }
 
     tbody.innerHTML = '';
+    tfoot.innerHTML = '';
 
     if (allHotelsData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#9ca3af;">No hotel records available.</td></tr>';
@@ -201,6 +203,9 @@ function generateOverallSummaryReport() {
 
     let count = 1;
     let anyDataFound = false;
+    let grandTotalSum = 0;
+    let grandPaidSum = 0;
+    let grandBalanceSum = 0;
 
     allHotelsData.forEach(hotel => {
         let hotelSalesFiltered = allSalesData.filter(s => {
@@ -228,6 +233,11 @@ function generateOverallSummaryReport() {
             }
         });
 
+        let hotelBalance = hotel.oldBalance || 0;
+        grandTotalSum += totalBillSum;
+        grandPaidSum += totalPaidSum;
+        grandBalanceSum += hotelBalance;
+
         let productsHtml = '';
         let pKeys = Object.keys(productMap);
         if (pKeys.length > 0) {
@@ -246,10 +256,22 @@ function generateOverallSummaryReport() {
             <td>${productsHtml}</td>
             <td><b>₹${totalBillSum.toFixed(2)}</b></td>
             <td style="color:#34d399;">₹${totalPaidSum.toFixed(2)}</td>
-            <td style="color:#f87171; font-weight:bold;">₹${(hotel.oldBalance || 0).toFixed(2)}</td>
+            <td style="color:#f87171; font-weight:bold;">₹${hotelBalance.toFixed(2)}</td>
         `;
         tbody.appendChild(tr);
     });
+
+    // Add Grand Total Footer Row
+    let footTr = document.createElement('tr');
+    footTr.style.background = '#07090e';
+    footTr.style.fontWeight = 'bold';
+    footTr.innerHTML = `
+        <td colspan="3" style="text-align: right; color: #f59e0b; padding: 10px;">TOTAL (மொத்தம்):</td>
+        <td style="color: #f59e0b; padding: 10px;">₹${grandTotalSum.toFixed(2)}</td>
+        <td style="color: #34d399; padding: 10px;">₹${grandPaidSum.toFixed(2)}</td>
+        <td style="color: #f87171; padding: 10px;">₹${grandBalanceSum.toFixed(2)}</td>
+    `;
+    tfoot.appendChild(footTr);
 
     if (!anyDataFound && allHotelsData.length > 0) {
         tbody.innerHTML += `<tr><td colspan="6" style="text-align:center; color:#f59e0b; font-size:11px; padding:8px;">⚠️ No records found for ${filterVal}</td></tr>`;
