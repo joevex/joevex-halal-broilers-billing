@@ -37,7 +37,6 @@ window.addEventListener('DOMContentLoaded', () => {
     let splash = document.getElementById('splashScreen');
     let loginModal = document.getElementById('loginModal');
     let dashboardContent = document.getElementById('dashboardContent');
-    // Password View / Hide Toggle Logic
     let togglePasswordBtn = document.getElementById('togglePasswordBtn');
     let adminPasswordInput = document.getElementById('adminPassword');
 
@@ -49,7 +48,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 1. ஆரம்பத்தில் லாகின் மோடலை மட்டுமே கட்டாயமாக காட்டுதல்
     if (loginModal) loginModal.style.display = 'flex';
     if (dashboardContent) dashboardContent.style.display = 'none';
 
@@ -83,7 +81,6 @@ async function handleAdminLogin() {
         errorElem.style.color = '#34d399';
         errorElem.innerText = 'வெற்றிகரமாக உள்நுழைந்துவிட்டது!';
         
-        // லாகின் வெற்றிகரமாக முடிந்ததும் லாகின் மோடலை மூடிவிட்டு டேஷ்போர்டைக் காட்டுதல்
         setTimeout(() => {
             let loginModal = document.getElementById('loginModal');
             let dashboardContent = document.getElementById('dashboardContent');
@@ -122,10 +119,10 @@ async function handleAdminLogout() {
 function initializeAppData() {
     let todayStr = new Date().toISOString().split('T')[0];
     let dateInput = document.getElementById('reportFilterDate');
-    if (dateInput) {
-        dateInput.value = todayStr;
-        dateInput.addEventListener('change', generateOverallSummaryReport);
-    }
+    let monthInput = document.getElementById('reportFilterMonth');
+    
+    if (dateInput) dateInput.value = todayStr;
+    if (monthInput) monthInput.value = todayStr.substring(0, 7);
 
     setupStaticEventListeners();
     fetchHotelsFromFirestore();
@@ -145,6 +142,10 @@ function setupStaticEventListeners() {
     document.getElementById('closeSalaryModalBtn')?.addEventListener('click', closeSalaryModal);
     document.getElementById('saveSalaryBtn')?.addEventListener('click', processSalaryPayment);
 
+    document.getElementById('closeHotelReportModalBtn')?.addEventListener('click', () => {
+        document.getElementById('hotelReportModal').style.display = 'none';
+    });
+
     document.getElementById('closeBillingModalBtn')?.addEventListener('click', closeBillingModal);
     document.getElementById('cancelBillingBtn')?.addEventListener('click', closeBillingModal);
     document.getElementById('generateBillBtn')?.addEventListener('click', generateAndShareBill);
@@ -152,19 +153,44 @@ function setupStaticEventListeners() {
     document.getElementById('exportImgBtn')?.addEventListener('click', exportSummaryImage);
     document.getElementById('sendWaBtn')?.addEventListener('click', sendReportToWhatsApp);
 
+    document.getElementById('reportModeSelect')?.addEventListener('change', (e) => {
+        let mode = e.target.value;
+        let dailyBox = document.getElementById('dailyFilterBox');
+        let monthlyBox = document.getElementById('monthlyFilterBox');
+        if (mode === 'monthly') {
+            dailyBox.style.display = 'none';
+            monthlyBox.style.display = 'flex';
+        } else {
+            dailyBox.style.display = 'flex';
+            monthlyBox.style.display = 'none';
+        }
+        generateOverallSummaryReport();
+    });
+
+    document.getElementById('reportFilterDate')?.addEventListener('change', generateOverallSummaryReport);
+    document.getElementById('reportFilterMonth')?.addEventListener('change', generateOverallSummaryReport);
+
     document.getElementById('commonPaperRate')?.addEventListener('input', applyCommonPaperRate);
     document.getElementById('customerPaid')?.addEventListener('input', calculateFinalSummary);
 }
 
 function generateOverallSummaryReport() {
     let tbody = document.getElementById('overallReportBody');
-    let dateInput = document.getElementById('reportFilterDate');
+    let mode = document.getElementById('reportModeSelect')?.value || 'daily';
     let dateStrElem = document.getElementById('selectedReportDateStr');
 
-    if (!tbody || !dateInput) return;
+    if (!tbody) return;
 
-    let selectedDate = dateInput.value;
-    if (dateStrElem) dateStrElem.innerText = selectedDate;
+    let filterVal = '';
+    if (mode === 'monthly') {
+        let monthInput = document.getElementById('reportFilterMonth');
+        filterVal = monthInput ? monthInput.value : ''; // YYYY-MM
+        if (dateStrElem) dateStrElem.innerText = `Month: ${filterVal}`;
+    } else {
+        let dateInput = document.getElementById('reportFilterDate');
+        filterVal = dateInput ? dateInput.value : ''; // YYYY-MM-DD
+        if (dateStrElem) dateStrElem.innerText = filterVal;
+    }
 
     tbody.innerHTML = '';
 
@@ -177,13 +203,20 @@ function generateOverallSummaryReport() {
     let anyDataFound = false;
 
     allHotelsData.forEach(hotel => {
-        let hotelSalesForDate = allSalesData.filter(s => s.hotelName === hotel.hotelName && s.date === selectedDate);
+        let hotelSalesFiltered = allSalesData.filter(s => {
+            if (!s.date) return false;
+            if (mode === 'monthly') {
+                return s.hotelName === hotel.hotelName && s.date.startsWith(filterVal);
+            } else {
+                return s.hotelName === hotel.hotelName && s.date === filterVal;
+            }
+        });
 
         let productMap = {};
         let totalBillSum = 0;
         let totalPaidSum = 0;
 
-        hotelSalesForDate.forEach(sale => {
+        hotelSalesFiltered.forEach(sale => {
             totalBillSum += (sale.itemsTotal || 0);
             totalPaidSum += (sale.paid || 0);
 
@@ -203,7 +236,7 @@ function generateOverallSummaryReport() {
                 productsHtml += `<span class="item-badge">▪️ ${pName}: <b>${productMap[pName].toFixed(2)} kg</b></span>`;
             });
         } else {
-            productsHtml = '<span style="color:#9ca3af;">No recent items</span>';
+            productsHtml = '<span style="color:#9ca3af;">No records</span>';
         }
 
         let tr = document.createElement('tr');
@@ -219,20 +252,17 @@ function generateOverallSummaryReport() {
     });
 
     if (!anyDataFound && allHotelsData.length > 0) {
-        tbody.innerHTML += `<tr><td colspan="6" style="text-align:center; color:#f59e0b; font-size:11px; padding:8px;">⚠️ No bills created on ${selectedDate}</td></tr>`;
+        tbody.innerHTML += `<tr><td colspan="6" style="text-align:center; color:#f59e0b; font-size:11px; padding:8px;">⚠️ No records found for ${filterVal}</td></tr>`;
     }
 }
 
 function exportSummaryImage() {
     let reportElem = document.getElementById('summaryReportContainer');
-    let dateInput = document.getElementById('reportFilterDate');
-    let selectedDate = dateInput ? dateInput.value : 'Report';
-
     if (!reportElem) return;
 
     html2canvas(reportElem, { scale: 2, backgroundColor: '#111827' }).then(canvas => {
         let link = document.createElement('a');
-        link.download = `Halal_Broilers_Report_${selectedDate}.png`;
+        link.download = `Halal_Broilers_Report.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
     });
@@ -240,24 +270,19 @@ function exportSummaryImage() {
 
 function sendReportToWhatsApp() {
     let reportElem = document.getElementById('summaryReportContainer');
-    let dateInput = document.getElementById('reportFilterDate');
-    let selectedDate = dateInput ? dateInput.value : 'Report';
-
     if (!reportElem) return;
 
     html2canvas(reportElem, { scale: 2, backgroundColor: '#111827' }).then(canvas => {
         canvas.toBlob(blob => {
-            let file = new File([blob], `Halal_Broilers_Report_${selectedDate}.png`, { type: 'image/png' });
-            let message = encodeURIComponent(`*HALAL BROILERS* 🍗\nDaily Sales Summary\nDate: ${selectedDate}`);
+            let file = new File([blob], `Halal_Broilers_Report.png`, { type: 'image/png' });
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                navigator.share({ files: [file], title: 'Halal Broilers Report', text: `Daily Report for ${selectedDate}` }).catch(err => console.log(err));
+                navigator.share({ files: [file], title: 'Halal Broilers Report', text: `Sales Summary Report` }).catch(err => console.log(err));
             } else {
                 let link = document.createElement('a');
-                link.download = `Halal_Broilers_Report_${selectedDate}.png`;
+                link.download = `Halal_Broilers_Report.png`;
                 link.href = URL.createObjectURL(blob);
                 link.click();
-                window.open(`https://wa.me/?text=${message}`, '_blank');
             }
         });
     });
@@ -306,12 +331,14 @@ function fetchHotelsFromFirestore() {
                 </div>
                 <div class="actions">
                     <button class="btn-sm btn-action-bill btn-bill-act">Next Bill 🧾</button>
+                    <button class="btn-sm btn-success-glass btn-hotel-report-act">📊 Report</button>
                     <button class="btn-sm btn-action-edit btn-edit-act">✏️ Edit</button>
                     <button class="btn-sm btn-action-del btn-del-act">🗑️ Delete</button>
                 </div>
             `;
 
             li.querySelector('.btn-bill-act').onclick = () => openBillingModal(hotel);
+            li.querySelector('.btn-hotel-report-act').onclick = () => openHotelReportModal(hotel);
             li.querySelector('.btn-edit-act').onclick = () => editHotel(hotel);
             li.querySelector('.btn-del-act').onclick = () => deleteHotel(hotel.docId);
 
@@ -320,6 +347,52 @@ function fetchHotelsFromFirestore() {
 
         generateOverallSummaryReport();
     });
+}
+
+function openHotelReportModal(hotel) {
+    let modal = document.getElementById('hotelReportModal');
+    let titleElem = document.getElementById('hReportTitle');
+    let contentElem = document.getElementById('hReportContent');
+
+    if (!modal) return;
+
+    titleElem.innerText = `📊 Report: ${hotel.hotelName}`;
+    contentElem.innerHTML = '';
+
+    let hotelSales = allSalesData.filter(s => s.hotelName === hotel.hotelName);
+
+    if (hotelSales.length === 0) {
+        contentElem.innerHTML = '<p style="text-align:center; color:#9ca3af; padding:20px;">No sales history found for this hotel.</p>';
+    } else {
+        hotelSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        let html = '<table class="report-table" style="width:100%; border-collapse:collapse; background:#07090e;"><thead><tr><th style="padding:8px;">Date</th><th style="padding:8px;">Products & Weight</th><th style="padding:8px;">Total (₹)</th><th style="padding:8px;">Paid (₹)</th></tr></thead><tbody>';
+        
+        hotelSales.forEach(sale => {
+            let prodStr = '';
+            if (sale.items && sale.items.length > 0) {
+                sale.items.forEach(it => {
+                    prodStr += `<div style="padding:2px 0;">▪️ ${it.name}: <b>${it.weight} kg</b> (₹${it.total})</div>`;
+                });
+            } else {
+                prodStr = 'No items';
+            }
+
+            html += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <td style="padding:8px;"><b>${sale.date}</b></td>
+                    <td style="padding:8px;">${prodStr}</td>
+                    <td style="padding:8px;"><b>₹${(sale.itemsTotal || 0).toFixed(2)}</b></td>
+                    <td style="padding:8px; color:#34d399;">₹${(sale.paid || 0).toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        html += '</tbody></table>';
+        contentElem.innerHTML = html;
+    }
+
+    modal.style.display = 'flex';
 }
 
 function openAddHotelModal() {
@@ -349,8 +422,8 @@ async function saveHotel() {
     let address = document.getElementById('address').value.trim();
     let oldBal = parseFloat(document.getElementById('oldBalance').value) || 0;
 
-    if (!name || !customer || !contact || !address) {
-        alert('Please fill all details!');
+    if (!name || !customer || !address) {
+        alert('Please fill hotel name, customer name and address!');
         return;
     }
 
@@ -400,6 +473,7 @@ function openAddStaffModal() {
         document.getElementById('staffName').value = '';
         document.getElementById('staffMobile').value = '';
         document.getElementById('staffRole').value = 'Billing Staff';
+        document.getElementById('staffJoiningDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('staffSalary').value = '';
         document.getElementById('staffStatus').value = 'Active';
         modal.style.display = 'flex';
@@ -416,6 +490,7 @@ async function saveStaff() {
     let name = document.getElementById('staffName').value.trim();
     let mobile = document.getElementById('staffMobile').value.trim();
     let role = document.getElementById('staffRole').value;
+    let joiningDate = document.getElementById('staffJoiningDate').value || new Date().toISOString().split('T')[0];
     let salary = parseFloat(document.getElementById('staffSalary').value) || 0;
     let status = document.getElementById('staffStatus').value;
 
@@ -424,7 +499,7 @@ async function saveStaff() {
         return;
     }
 
-    let staffData = { name, mobile, role, monthlySalary: salary, status, updatedAt: serverTimestamp() };
+    let staffData = { name, mobile, role, joiningDate, monthlySalary: salary, status, updatedAt: serverTimestamp() };
 
     try {
         if (docId) {
@@ -473,13 +548,14 @@ function fetchStaffFromFirestore() {
                     <div>
                         <h4>👤 ${staff.name}</h4>
                         <p>${staff.role} | 📞 ${staff.mobile}</p>
+                        <p style="font-size:10px; color:#f59e0b; margin-top:2px;">📅 Joining: ${staff.joiningDate || 'N/A'}</p>
                     </div>
                     <span style="font-size:9px; padding:3px 6px; border-radius:4px; font-weight:bold; background:${staff.status === 'Active' ? '#064e3b' : '#7f1d1d'}; color:${staff.status === 'Active' ? '#34d399' : '#fca5a5'};">${staff.status}</span>
                 </div>
                 <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; font-size:10px; text-align:center; margin:8px 0; background:#07090e; padding:6px; border-radius:6px;">
                     <div><span style="color:#9ca3af; display:block;">MONTHLY</span>₹${monthly}</div>
                     <div><span style="color:#9ca3af; display:block;">PAID</span>₹${paid}</div>
-                    <div><span style="color:#9ca3af; display:block;">PENDING</span><strong style="color:#f59e0b;">₹${pending}</strong></div>
+                    <div><span style="color:#9ca3af; display:block;">PENDING</span><strong style="color:#f59e0b;">₹${pending < 0 ? 0 : pending}</strong></div>
                 </div>
                 <div class="actions">
                     <button class="btn-sm btn-primary-glass btn-salary-act" style="flex:1;">💵 Salary</button>
@@ -506,6 +582,7 @@ function editStaff(staff) {
     document.getElementById('staffName').value = staff.name || '';
     document.getElementById('staffMobile').value = staff.mobile || '';
     document.getElementById('staffRole').value = staff.role || 'Billing Staff';
+    document.getElementById('staffJoiningDate').value = staff.joiningDate || '';
     document.getElementById('staffSalary').value = staff.monthlySalary || '';
     document.getElementById('staffStatus').value = staff.status || 'Active';
     document.getElementById('staffModal').style.display = 'flex';
@@ -550,7 +627,7 @@ async function processSalaryPayment() {
     await updateDoc(doc(db, "staff", docId), { paidSalary: newPaid });
 
     closeSalaryModal();
-    alert('Salary recorded!');
+    alert('Salary amount recorded and deducted successfully!');
 }
 
 function openBillingModal(hotel) {
@@ -659,7 +736,7 @@ async function generateAndShareBill() {
 
     document.getElementById('rDateStr').innerText = billDate;
     document.getElementById('rHotelName').innerText = activeHotel.hotelName;
-    document.getElementById('rCustomerName').innerText = `${activeHotel.customerName || ''} (${activeHotel.contactNumber || ''})`;
+    document.getElementById('rCustomerName').innerText = `${activeHotel.customerName || ''}`;
     document.getElementById('rAddress').innerText = activeHotel.address || '';
 
     document.getElementById('rItemsTotal').innerText = itemsTotal.toFixed(2);
@@ -673,7 +750,7 @@ async function generateAndShareBill() {
     let count = 1;
     billedItems.forEach(it => {
         let tr = document.createElement('tr');
-        tr.innerHTML = `<td>${count++}</td><td><b>${it.name}</b></td><td>${it.weight} kg</td><td><b>₹${it.total.toFixed(2)}</b></td>`;
+        tr.innerHTML = `<td style="color: #000; padding: 8px; border-bottom: 1px solid #e2e8f0;">${count++}</td><td style="color: #000; font-weight: bold; padding: 8px; border-bottom: 1px solid #e2e8f0;">${it.name}</td><td style="color: #000; padding: 8px; border-bottom: 1px solid #e2e8f0;">${it.weight} kg</td><td style="color: #000; font-weight: bold; padding: 8px; border-bottom: 1px solid #e2e8f0;">₹${it.total.toFixed(2)}</td>`;
         rTableBody.appendChild(tr);
     });
 
@@ -685,29 +762,23 @@ async function generateAndShareBill() {
     await updateDoc(doc(db, "hotels", activeHotel.docId), { oldBalance: finalBal });
 
     let receiptElement = document.getElementById('receiptTemplate');
-    receiptElement.style.left = '0';
+    receiptElement.style.top = '0px';
+    receiptElement.style.left = '0px';
 
-    html2canvas(receiptElement, { scale: 2 }).then(canvas => {
+    html2canvas(receiptElement, { scale: 2, useCORS: true }).then(canvas => {
+        receiptElement.style.top = '-9999px';
         receiptElement.style.left = '-9999px';
 
         canvas.toBlob(blob => {
             let file = new File([blob], `Bill_${activeHotel.hotelName}_${billDate}.png`, { type: 'image/png' });
-            let cleanPhone = activeHotel.contactNumber ? activeHotel.contactNumber.replace(/\D/g, '') : '';
-            if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
-
-            let message = encodeURIComponent(`*HALAL BROILERS* 🍗\nDate: ${billDate}\nHotel: ${activeHotel.hotelName}\nBill: ₹${itemsTotal.toFixed(2)}\nBalance: ₹${finalBal.toFixed(2)}`);
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                navigator.share({ files: [file], title: 'Bill', text: `${activeHotel.hotelName}` }).catch(err => console.log(err));
+                navigator.share({ files: [file], title: 'Halal Broilers Bill', text: `Bill for ${activeHotel.hotelName}` }).catch(err => console.log(err));
             } else {
                 let link = document.createElement('a');
                 link.download = `Bill_${activeHotel.hotelName}_${billDate}.png`;
                 link.href = URL.createObjectURL(blob);
                 link.click();
-            }
-
-            if (cleanPhone) {
-                window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
             }
 
             closeBillingModal();

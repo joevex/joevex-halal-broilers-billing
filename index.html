@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Halal Broilers - Billing & ERP</title>
-    <link rel="stylesheet" href="style.css?v=9.0">
+    <link rel="stylesheet" href="style.css?v=10.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <!-- 2. LOGIN MODAL OVERLAY (Initially Shown) -->
+    <!-- 2. LOGIN MODAL -->
     <div id="loginModal" class="modal" style="display: flex;">
         <div class="modal-content premium-login-card">
             
@@ -39,7 +39,6 @@
                 <input type="email" id="adminEmail" placeholder=" " required>
                 <label data-en="Admin Email Address" data-ta="மின்னஞ்சல் முகவரி (Email)">மின்னஞ்சல் முகவரி (Email)</label>
             </div>
-           <!-- Password Field with View Option -->
             <div class="floating-group password-group">
                 <input type="password" id="adminPassword" placeholder=" " required>
                 <label data-en="Password" data-ta="கடவுச்சொல் (Password)">கடவுச்சொல் (Password)</label>
@@ -51,7 +50,7 @@
         </div>
     </div>
 
-    <!-- 3. MAIN DASHBOARD CONTENT (Initially Hidden until login) -->
+    <!-- 3. MAIN DASHBOARD CONTENT -->
     <div id="dashboardContent" class="container" style="display: none;">
         <header class="app-header">
             <img src="logo.png" alt="Logo" class="header-logo-img" onerror="this.style.display='none'">
@@ -77,25 +76,39 @@
             <ul id="hotelList" class="hotel-list"></ul>
         </section>
 
-        <!-- DATE-WISE HOTEL SUMMARY REPORT -->
+        <!-- DATE-WISE & MONTH-WISE SALES SUMMARY REPORT -->
         <section class="card premium-card">
             <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
-                <h3 data-en="📋 Daily Sales Summary" data-ta="📋 தினசரி விற்பனை அறிக்கை">📋 தினசரி விற்பனை அறிக்கை</h3>
+                <h3 data-en="📋 Sales Report" data-ta="📋 விற்பனை அறிக்கை">📋 விற்பனை அறிக்கை</h3>
                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                     <button class="btn-sm btn-success-glass" id="exportImgBtn" data-en="📸 Download" data-ta="📸 பதிவிறக்கம்">📸 பதிவிறக்கம்</button>
-                    <button class="btn-sm btn-wa-glass" id="sendWaBtn" data-en="📤 WhatsApp" data-ta="📤 வாட்ஸ்அப்">📤 வாட்ஸ்அப்</button>
+                    <button class="btn-sm btn-wa-glass" id="sendWaBtn" data-en="📤 Share Image" data-ta="📤 படம் பகிர்">📤 படம் பகிர்</button>
                 </div>
             </div>
 
-            <div class="filter-wrapper">
-                <label data-en="📅 Select Date:" data-ta="📅 தேதியைத் தேர்ந்தெடுக்கவும்:">📅 தேதியைத் தேர்ந்தெடுக்கவும்:</label>
-                <input type="date" id="reportFilterDate" class="modern-date-input">
+            <!-- Report Mode Selector (Daily vs Monthly) -->
+            <div class="filter-wrapper" style="flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label>Report Type:</label>
+                    <select id="reportModeSelect" class="modern-date-input" style="max-width: 120px;">
+                        <option value="daily">Daily Report</option>
+                        <option value="monthly">Monthly Report</option>
+                    </select>
+                </div>
+                <div id="dailyFilterBox" style="display: flex; align-items: center; gap: 6px;">
+                    <label>Date:</label>
+                    <input type="date" id="reportFilterDate" class="modern-date-input">
+                </div>
+                <div id="monthlyFilterBox" style="display: none; align-items: center; gap: 6px;">
+                    <label>Month:</label>
+                    <input type="month" id="reportFilterMonth" class="modern-date-input">
+                </div>
             </div>
 
             <div id="summaryReportContainer" class="summary-report-box">
                 <div class="report-header-banner">
                     <h2>HALAL BROILERS 🍗</h2>
-                    <p>Daily Sales, Weight & Balance Summary (<span id="selectedReportDateStr"></span>)</p>
+                    <p>Sales & Weight Summary (<span id="selectedReportDateStr"></span>)</p>
                 </div>
 
                 <div class="table-responsive">
@@ -152,7 +165,7 @@
             <input type="hidden" id="editHotelId">
             <div class="form-group"><label>Hotel Name:</label><input type="text" id="hotelName"></div>
             <div class="form-group"><label>Customer Name:</label><input type="text" id="customerName"></div>
-            <div class="form-group"><label>Contact Number (WhatsApp):</label><input type="text" id="contactNumber"></div>
+            <div class="form-group"><label>Contact Number:</label><input type="text" id="contactNumber"></div>
             <div class="form-group"><label>Address:</label><textarea id="address" rows="2"></textarea></div>
             <div class="form-group"><label>Old Balance (₹):</label><input type="number" id="oldBalance"></div>
             <button class="btn btn-primary-glass" id="saveHotelBtn" style="margin-top: 10px;">Save Hotel</button>
@@ -175,6 +188,7 @@
                     <option value="Butcher">Butcher</option>
                 </select>
             </div>
+            <div class="form-group"><label>Date of Joining</label><input type="date" id="staffJoiningDate"></div>
             <div class="form-group"><label>Monthly Salary (₹)</label><input type="number" id="staffSalary"></div>
             <div class="form-group">
                 <label>Staff Status</label>
@@ -196,13 +210,22 @@
         </div>
     </div>
 
+    <!-- Hotel Specific Report Modal -->
+    <div id="hotelReportModal" class="modal">
+        <div class="modal-content premium-modal" style="max-width: 650px; background: #111827; color: #f3f4f6;">
+            <span class="close-btn" id="closeHotelReportModalBtn">&times;</span>
+            <h3 id="hReportTitle" style="color: #f59e0b; margin-bottom: 12px;">📊 Hotel Sales Report</h3>
+            <div id="hReportContent" style="max-height: 450px; overflow-y: auto; font-size: 12px;"></div>
+        </div>
+    </div>
+
     <!-- Billing & Cart Modal -->
     <div id="billingModal" class="modal">
-        <div class="modal-content large-modal" style="background:#fff; color:#1e293b;">
-            <span class="close-btn" id="closeBillingModalBtn" style="color: #dc2626; font-size: 28px;">&times;</span>
+        <div class="modal-content large-modal">
+            <span class="close-btn" id="closeBillingModalBtn">&times;</span>
             <div class="bill-top-bar">
                 <h2>📝 Create New Bill</h2>
-                <div class="form-group inline-date"><label style="color:#475569;">Date:</label><input type="date" id="billDate" style="background:#fff; color:#000;"></div>
+                <div class="form-group inline-date"><label>Date:</label><input type="date" id="billDate"></div>
             </div>
             <div class="bill-hotel-info">
                 <p><b>Hotel:</b> <span id="bHotelName"></span> | <b>Customer:</b> <span id="bCustomerName"></span></p>
@@ -210,9 +233,9 @@
                 <p><b>Old Balance:</b> ₹<span id="bOldBalance">0.00</span></p>
             </div>
 
-            <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #cbd5e1; display: flex; align-items: center; gap: 10px;">
-                <label style="font-size: 13px; font-weight: bold; color: #b45309; white-space: nowrap;">🐔 Common Paper Rate (Items 1-5):</label>
-                <input type="number" id="commonPaperRate" placeholder="Enter Paper Rate" step="0.1" style="background: #fff; color: #000; font-weight: bold; border-color: #f59e0b; padding: 6px 10px;">
+            <div style="background: #ecfdf5; padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #a7f3d0; display: flex; align-items: center; gap: 10px;">
+                <label style="font-size: 13px; font-weight: bold; color: #065f46; white-space: nowrap;">🐔 Common Paper Rate (Items 1-5):</label>
+                <input type="number" id="commonPaperRate" placeholder="Enter Paper Rate" step="0.1" style="background: #fff; color: #000; font-weight: bold; border-color: #059669; padding: 6px 10px;">
             </div>
 
             <div class="cart-section">
@@ -225,7 +248,7 @@
                 </div>
             </div>
             <div class="payment-section">
-                <div class="form-group"><label style="color:#475569;">Customer Paid (₹):</label><input type="number" id="customerPaid" style="background:#fff; color:#000;"></div>
+                <div class="form-group"><label style="color:#065f46;">Customer Paid (₹):</label><input type="number" id="customerPaid"></div>
                 <div class="summary-box">
                     <p>Items Total: ₹<span id="itemsTotalAmt">0.00</span></p>
                     <p>Old Balance (+): ₹<span id="summaryOldBal">0.00</span></p>
@@ -235,7 +258,7 @@
                 </div>
             </div>
             <div class="modal-buttons">
-                <button class="btn btn-success-glass" id="generateBillBtn">📥 Share WhatsApp & Bill</button>
+                <button class="btn btn-success-glass" id="generateBillBtn">📥 Generate & Share Bill Image</button>
                 <button class="btn" id="cancelBillingBtn" style="background: #64748b; color: white;">❌ Exit / Cancel</button>
             </div>
         </div>
@@ -271,7 +294,7 @@
         <div class="r-footer-banner"><h3>THANK YOU • VISIT US AGAIN</h3></div>
     </div>
 
-    <script type="module" src="script.js?v=9.0"></script>
+    <script type="module" src="script.js?v=10.0"></script>
     <script>
         function switchLanguage(lang) {
             localStorage.setItem('app_lang', lang);
@@ -300,4 +323,4 @@
         });
     </script>
 </body>
-</html>
+</html> 
