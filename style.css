@@ -147,10 +147,10 @@ input, textarea, select { width: 100%; padding: 8px; border: 1px solid #94a3b8; 
 .modal-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn { padding: 10px; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; }
 
-/* RECEIPT TEMPLATE - PROPERLY HIDDEN OFFSCREEN */
+/* RECEIPT TEMPLATE - PROPERLY HIDDEN OFFSCREEN FOR HTML2CANVAS */
 .receipt-template { 
-    position: fixed; 
-    top: -9999px; 
+    position: absolute; 
+    top: 0; 
     left: -9999px; 
     width: 600px; 
     background: #ffffff; 
@@ -160,9 +160,6 @@ input, textarea, select { width: 100%; padding: 8px; border: 1px solid #94a3b8; 
     border: 2px solid #333333; 
     border-radius: 12px; 
     box-sizing: border-box; 
-    z-index: -999; 
-    opacity: 0;
-    pointer-events: none;
 }
 .receipt-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #b45309; padding-bottom: 15px; margin-bottom: 15px; gap: 15px; }
 .r-logo-box { flex-shrink: 0; }
