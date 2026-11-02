@@ -147,21 +147,22 @@ input, textarea, select { width: 100%; padding: 8px; border: 1px solid #94a3b8; 
 .modal-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn { padding: 10px; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; }
 
-/* RECEIPT TEMPLATE - PROPERLY HIDDEN OFFSCREEN FOR HTML2CANVAS */
+/* RECEIPT TEMPLATE - PROPERLY RENDERED FOR HTML2CANVAS */
 .receipt-template { 
-    position: absolute; 
+    position: fixed; 
     top: 0; 
     left: -9999px; 
     width: 600px; 
-    background: #ffffff; 
+    background: #ffffff !important; 
     padding: 24px; 
     font-family: Arial, sans-serif; 
     color: #111111; 
     border: 2px solid #333333; 
     border-radius: 12px; 
     box-sizing: border-box; 
+    z-index: 99999;
 }
-.receipt-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #b45309; padding-bottom: 15px; margin-bottom: 15px; gap: 15px; }
+.receipt-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #b45309; padding-bottom: 15px; margin-bottom: 15px; gap: 15px; background: #ffffff; }
 .r-logo-box { flex-shrink: 0; }
 .r-logo { width: 150px; height: 150px; object-fit: contain; }
 .r-brand-box { flex-grow: 1; text-align: left; }
@@ -172,9 +173,9 @@ input, textarea, select { width: 100%; padding: 8px; border: 1px solid #94a3b8; 
 .r-branch-locations { font-size: 14px; color: #000; font-weight: bold; margin-top: 2px; }
 .r-meta-box { display: flex; justify-content: flex-end; background: #fdf8f6; border: 1px solid #fde68a; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-bottom: 8px; max-width: 170px; margin-left: auto; }
 .r-customer-card { background: #fffbeb; border: 1px solid #fcd34d; padding: 10px; border-radius: 6px; font-size: 13px; line-height: 1.5; margin-bottom: 15px; }
-.r-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 15px; color: #000 !important; }
+.r-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 15px; color: #000 !important; background: #ffffff; }
 .r-table th { background: #064e3b; color: white; padding: 8px; text-align: left; }
-.r-table td { border-bottom: 1px solid #e2e8f0; padding: 8px; color: #000 !important; font-weight: bold; }
+.r-table td { border-bottom: 1px solid #e2e8f0; padding: 8px; color: #000 !important; font-weight: bold; background: #ffffff; }
 .r-summary-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; }
 .r-sum-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
 .r-grand-total { display: flex; justify-content: space-between; background: #064e3b; color: white; padding: 14px 16px; border-radius: 8px; font-size: 20px; font-weight: 900; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
