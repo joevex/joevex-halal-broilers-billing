@@ -162,14 +162,14 @@ input, textarea, select { width: 100%; padding: 8px; border: 1px solid #94a3b8; 
     box-sizing: border-box; 
     z-index: 99999;
 }
-.receipt-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #b45309; padding-bottom: 15px; margin-bottom: 15px; gap: 15px; background: #ffffff; }
-.r-logo-box { flex-shrink: 0; }
-.r-logo { width: 150px; height: 150px; object-fit: contain; }
-.r-brand-box { flex-grow: 1; text-align: left; }
-.r-top-arabic { font-size: 20px; font-weight: bold; color: #000; margin-bottom: 5px; }
-.r-title { font-size: 32px; font-weight: 900; color: #064e3b; letter-spacing: 2px; line-height: 1; margin-bottom: 4px; }
-.r-subtitle-tag { font-size: 22px; color: #b45309; font-weight: 900; letter-spacing: 2px; margin-bottom: 8px; }
-.r-subtitle-branch { font-size: 15px; color: #000; font-weight: bold; margin-top: 5px; }
+.receipt-header { display: flex; flex-direction: column; align-items: center; text-align: center; border-bottom: 2px solid #b45309; padding-bottom: 15px; margin-bottom: 15px; gap: 12px; background: #ffffff; }
+.r-logo-box { flex-shrink: 0; margin-bottom: 4px; }
+.r-logo { width: 140px; height: 140px; object-fit: contain; }
+.r-brand-box { flex-grow: 1; text-align: center; width: 100%; }
+.r-top-arabic { font-size: 22px; font-weight: bold; color: #000; margin-bottom: 6px; }
+.r-title { font-size: 52px; font-weight: 900; color: #064e3b; letter-spacing: 3px; line-height: 1; margin-bottom: 6px; }
+.r-subtitle-tag { font-size: 34px; color: #b45309; font-weight: 900; letter-spacing: 2.5px; margin-bottom: 8px; }
+.r-subtitle-branch { font-size: 15px; color: #000; font-weight: bold; margin-top: 4px; }
 .r-branch-locations { font-size: 14px; color: #000; font-weight: bold; margin-top: 2px; }
 .r-meta-box { display: flex; justify-content: flex-end; background: #fdf8f6; border: 1px solid #fde68a; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-bottom: 8px; max-width: 170px; margin-left: auto; }
 .r-customer-card { background: #fffbeb; border: 1px solid #fcd34d; padding: 10px; border-radius: 6px; font-size: 13px; line-height: 1.5; margin-bottom: 15px; }
